@@ -57,6 +57,8 @@ client-workspace/
     transcript-index.json
   history/
     content-history.csv
+  approvals/
+    approval-record.md
   thumbnail-brand.md
 ```
 

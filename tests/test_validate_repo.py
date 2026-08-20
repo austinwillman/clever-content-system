@@ -8,6 +8,62 @@ from pathlib import Path
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 VALIDATOR = REPOSITORY_ROOT / "scripts" / "validate_repo.py"
 
+VALID_MANIFEST = """schema_version: "1.0"
+client:
+  identifier: "<client-identifier>"
+  display_name: "<client-display-name>"
+active_90_day_objective:
+  statement: "<objective>"
+  success_metric: "<metric>"
+  target_value: "<target>"
+content_pillars:
+  - id: pillar-1
+    name: "<pillar one>"
+    purpose: "<purpose>"
+  - id: pillar-2
+    name: "<pillar two>"
+    purpose: "<purpose>"
+  - id: pillar-3
+    name: "<pillar three>"
+    purpose: "<purpose>"
+  - id: pillar-4
+    name: "<pillar four>"
+    purpose: "<purpose>"
+cadence:
+  cycle_days: 6
+  days:
+    - day: 1
+      focus: "<focus>"
+    - day: 2
+      focus: "<focus>"
+    - day: 3
+      focus: "<focus>"
+    - day: 4
+      focus: "<focus>"
+    - day: 5
+      focus: "<focus>"
+    - day: 6
+      focus: "<focus>"
+cta_ladder:
+  - stage: awareness
+    call_to_action: "<action>"
+    destination: "<destination>"
+locations:
+  content_context: content-context.md
+  demand_map: research/demand-map.csv
+  trend_library: research/trend-library.json
+  transcript_index: sources/transcript-index.json
+  content_history: history/content-history.csv
+approval_gate:
+  required_before: production
+  approved_by: "<approver>"
+  record_location: approvals/approval-record.md
+fatigue_rules:
+  lookback_days: 30
+last_refresh_dates:
+  content_context: null
+"""
+
 REQUIRED_REPOSITORY_FILES = {
     ".gitignore": "clients/\nprivate/\nsecrets/\n.env\n.env.*\n!.env.example\n",
     "LICENSE": (
@@ -21,7 +77,7 @@ REQUIRED_REPOSITORY_FILES = {
     "SECURITY.md": "# Security\n",
     "docs/architecture.md": "# Architecture\n",
     "schemas/content-system.schema.json": "{}\n",
-    "templates/client-workspace/content-system.yaml": "schema_version: 1\n",
+    "templates/client-workspace/content-system.yaml": VALID_MANIFEST,
     "templates/client-workspace/content-context.md": "# Content context\n",
     "templates/client-workspace/research/demand-map.csv": "topic,intent\n",
     "templates/client-workspace/research/trend-library.json": "[]\n",
@@ -91,6 +147,14 @@ class RepositoryFixture:
             text=True,
         )
 
+    def force_track(self, relative_path: str) -> None:
+        subprocess.run(
+            ["git", "-C", str(self.root), "add", "-f", "--", relative_path],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
 
 class ValidateRepositoryTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -139,10 +203,40 @@ class ValidateRepositoryTests(unittest.TestCase):
             "missing required skill file: skills/brand-thumbnail/references/layouts.md"
         )
 
+    def test_force_added_clients_path_fails(self) -> None:
+        self.assert_valid()
+        self.fixture.write("clients/example/record.md", "Private record.\n")
+        self.fixture.force_track("clients/example/record.md")
+
+        self.assert_invalid("blocked tracked path: clients/example/record.md")
+
+    def test_force_added_private_path_fails(self) -> None:
+        self.assert_valid()
+        self.fixture.write("private/example/record.md", "Private record.\n")
+        self.fixture.force_track("private/example/record.md")
+
+        self.assert_invalid("blocked tracked path: private/example/record.md")
+
+    def test_force_added_secrets_path_fails(self) -> None:
+        self.assert_valid()
+        self.fixture.write("secrets/example/record.md", "Private record.\n")
+        self.fixture.force_track("secrets/example/record.md")
+
+        self.assert_invalid("blocked tracked path: secrets/example/record.md")
+
     def test_tracked_private_path_fails(self) -> None:
         self.assert_valid()
         self.fixture.write(
             "notes.md", "Asset: /" + "Users/example/private-client/logo.png\n"
+        )
+        self.fixture.track_all()
+
+        self.assert_invalid("blocked private path")
+
+    def test_private_var_folders_path_fails(self) -> None:
+        self.assert_valid()
+        self.fixture.write(
+            "notes.md", "Cache: /" + "private/var/folders/example/output.png\n"
         )
         self.fixture.track_all()
 
@@ -239,6 +333,26 @@ class ValidateRepositoryTests(unittest.TestCase):
 
                 self.assert_invalid("blocked public-skill assumption")
 
+    def test_relative_private_asset_reference_inside_skill_fails(self) -> None:
+        self.assert_valid()
+        self.fixture.write(
+            "skills/brand-thumbnail/notes.md",
+            "Load " + "private/acme/logo.png before rendering.\n",
+        )
+        self.fixture.track_all()
+
+        self.assert_invalid("blocked private asset reference in public skill")
+
+    def test_standalone_family_brand_token_inside_skill_fails(self) -> None:
+        self.assert_valid()
+        self.fixture.write(
+            "skills/brand-thumbnail/notes.md",
+            "Apply the " + "Will" + "man visual treatment.\n",
+        )
+        self.fixture.track_all()
+
+        self.assert_invalid("blocked family-brand token in public skill")
+
     def test_untracked_content_is_not_scanned(self) -> None:
         self.assert_valid()
         self.fixture.write(
@@ -254,12 +368,148 @@ class ValidateRepositoryTests(unittest.TestCase):
 
         self.assert_invalid("invalid JSON")
 
+    def test_populated_json_templates_fail(self) -> None:
+        self.assert_valid()
+        for relative_path in (
+            "templates/client-workspace/research/trend-library.json",
+            "templates/client-workspace/sources/transcript-index.json",
+        ):
+            with self.subTest(relative_path=relative_path):
+                self.fixture.write(relative_path, '[{"placeholder": true}]\n')
+                self.fixture.track_all()
+
+                self.assert_invalid("JSON template must be an empty array")
+
+                self.fixture.write(relative_path, "[]\n")
+                self.fixture.track_all()
+
     def test_csv_template_without_headers_fails(self) -> None:
         self.assert_valid()
         self.fixture.write("templates/client-workspace/research/demand-map.csv", "")
         self.fixture.track_all()
 
         self.assert_invalid("CSV template has no header")
+
+    def test_populated_csv_templates_fail(self) -> None:
+        self.assert_valid()
+        cases = {
+            "templates/client-workspace/research/demand-map.csv": (
+                "topic,intent\nexample,learn\n"
+            ),
+            "templates/client-workspace/history/content-history.csv": (
+                "item_id,status\nexample,draft\n"
+            ),
+        }
+        for relative_path, content in cases.items():
+            with self.subTest(relative_path=relative_path):
+                self.fixture.write(relative_path, content)
+                self.fixture.track_all()
+
+                self.assert_invalid("CSV template contains a data row")
+
+                self.fixture.write(relative_path, REQUIRED_REPOSITORY_FILES[relative_path])
+                self.fixture.track_all()
+
+    def test_valid_manifest_contract_passes(self) -> None:
+        self.assert_valid()
+
+    def test_manifest_missing_approval_path_fails(self) -> None:
+        self.assert_valid()
+        manifest = VALID_MANIFEST.replace(
+            "  record_location: approvals/approval-record.md\n", ""
+        )
+        self.fixture.write("templates/client-workspace/content-system.yaml", manifest)
+        self.fixture.track_all()
+
+        self.assert_invalid("manifest approval_gate is missing record_location")
+
+    def test_manifest_escaping_path_fails(self) -> None:
+        self.assert_valid()
+        manifest = VALID_MANIFEST.replace(
+            "approvals/approval-record.md", "../approvals/approval-record.md"
+        )
+        self.fixture.write("templates/client-workspace/content-system.yaml", manifest)
+        self.fixture.track_all()
+
+        self.assert_invalid("manifest path is not workspace-relative")
+
+    def test_manifest_missing_referenced_file_fails(self) -> None:
+        self.assert_valid()
+        (self.root / "templates/client-workspace/content-context.md").unlink()
+        self.fixture.track_all()
+
+        self.assert_invalid("manifest referenced file is missing")
+
+    def test_manifest_wrong_pillar_and_day_counts_fail(self) -> None:
+        cases = {
+            "pillars": (
+                "  - id: pillar-4\n"
+                "    name: \"<pillar four>\"\n"
+                "    purpose: \"<purpose>\"\n",
+                "manifest must define exactly four content pillars",
+            ),
+            "days": (
+                "    - day: 6\n      focus: \"<focus>\"\n",
+                "manifest cadence days must be exactly 1 through 6",
+            ),
+        }
+        for label, (removed_text, expected_message) in cases.items():
+            with self.subTest(label=label):
+                self.fixture.write(
+                    "templates/client-workspace/content-system.yaml",
+                    VALID_MANIFEST.replace(removed_text, ""),
+                )
+                self.fixture.track_all()
+
+                self.assert_invalid(expected_message)
+
+    def test_manifest_fixed_values_and_required_fields_fail(self) -> None:
+        cases = {
+            "schema": (
+                'schema_version: "1.0"',
+                'schema_version: "2.0"',
+                "manifest schema_version must be 1.0",
+            ),
+            "cycle": (
+                "  cycle_days: 6",
+                "  cycle_days: 7",
+                "manifest cadence cycle_days must be 6",
+            ),
+            "day_values": (
+                "    - day: 6",
+                "    - day: 5",
+                "manifest cadence days must be exactly 1 through 6",
+            ),
+            "location": (
+                "  demand_map: research/demand-map.csv\n",
+                "",
+                "manifest locations is missing demand_map",
+            ),
+            "required_before": (
+                "  required_before: production\n",
+                "",
+                "manifest approval_gate is missing required_before",
+            ),
+            "approved_by": (
+                '  approved_by: "<approver>"\n',
+                "",
+                "manifest approval_gate is missing approved_by",
+            ),
+            "top_level": (
+                "fatigue_rules:\n",
+                "",
+                "manifest is missing top-level section: fatigue_rules",
+            ),
+        }
+        for label, (old, new, expected_message) in cases.items():
+            with self.subTest(label=label):
+                self.fixture.write(
+                    "templates/client-workspace/content-system.yaml",
+                    VALID_MANIFEST.replace(old, new),
+                )
+                self.fixture.track_all()
+
+                self.assert_invalid(expected_message)
 
     def test_staged_non_executable_mode_hidden_by_worktree_mode_fails(self) -> None:
         self.assert_valid()
