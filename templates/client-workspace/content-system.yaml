@@ -53,7 +53,7 @@ locations:
 approval_gate:
   required_before: production
   approved_by: "<role or person responsible for approval>"
-  record_location: "<approved private system or document>"
+  record_location: approvals/approval-record.md
 fatigue_rules:
   lookback_days: 30
   max_reuses_per_topic: 2

@@ -57,7 +57,45 @@
           "type": "array",
           "minItems": 6,
           "maxItems": 6,
-          "items": { "$ref": "#/$defs/cadenceDay" }
+          "prefixItems": [
+            {
+              "allOf": [
+                { "$ref": "#/$defs/cadenceDay" },
+                { "properties": { "day": { "const": 1 } } }
+              ]
+            },
+            {
+              "allOf": [
+                { "$ref": "#/$defs/cadenceDay" },
+                { "properties": { "day": { "const": 2 } } }
+              ]
+            },
+            {
+              "allOf": [
+                { "$ref": "#/$defs/cadenceDay" },
+                { "properties": { "day": { "const": 3 } } }
+              ]
+            },
+            {
+              "allOf": [
+                { "$ref": "#/$defs/cadenceDay" },
+                { "properties": { "day": { "const": 4 } } }
+              ]
+            },
+            {
+              "allOf": [
+                { "$ref": "#/$defs/cadenceDay" },
+                { "properties": { "day": { "const": 5 } } }
+              ]
+            },
+            {
+              "allOf": [
+                { "$ref": "#/$defs/cadenceDay" },
+                { "properties": { "day": { "const": 6 } } }
+              ]
+            }
+          ],
+          "items": false
         }
       }
     },
@@ -94,7 +132,7 @@
           "enum": ["planning", "production", "distribution"]
         },
         "approved_by": { "type": "string", "minLength": 1 },
-        "record_location": { "type": "string", "minLength": 1 }
+        "record_location": { "$ref": "#/$defs/relativePath" }
       }
     },
     "fatigue_rules": {
