@@ -507,7 +507,7 @@ def check_manifest_template(
             if key not in approval_values:
                 errors.append(f"manifest approval_gate is missing {key}")
         required_before = narrow_scalar_text(approval_values.get("required_before"))
-        if required_before is not None and required_before not in {
+        if "required_before" in approval_values and required_before not in {
             "planning",
             "production",
             "distribution",

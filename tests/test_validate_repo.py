@@ -511,6 +511,37 @@ class ValidateRepositoryTests(unittest.TestCase):
 
                 self.assert_invalid(expected_message)
 
+    def test_manifest_required_before_empty_values_fail(self) -> None:
+        invalid_values = ("", "null", "~", '""', "''")
+        for value in invalid_values:
+            with self.subTest(value=value):
+                manifest = VALID_MANIFEST.replace(
+                    "  required_before: production",
+                    f"  required_before: {value}",
+                )
+                self.fixture.write(
+                    "templates/client-workspace/content-system.yaml", manifest
+                )
+                self.fixture.track_all()
+
+                self.assert_invalid(
+                    "manifest approval_gate required_before is invalid"
+                )
+
+    def test_manifest_required_before_enum_values_pass(self) -> None:
+        for value in ("planning", "production", "distribution"):
+            with self.subTest(value=value):
+                manifest = VALID_MANIFEST.replace(
+                    "  required_before: production",
+                    f"  required_before: {value}",
+                )
+                self.fixture.write(
+                    "templates/client-workspace/content-system.yaml", manifest
+                )
+                self.fixture.track_all()
+
+                self.assert_valid()
+
     def test_staged_non_executable_mode_hidden_by_worktree_mode_fails(self) -> None:
         self.assert_valid()
         script = self.root / "skills/brand-thumbnail/scripts/analyze-video.sh"
