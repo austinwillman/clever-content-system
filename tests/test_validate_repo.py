@@ -196,6 +196,20 @@ class ValidateRepositoryTests(unittest.TestCase):
 
         self.assert_invalid("blocked Willman-specific identity")
 
+    def test_underscore_separated_identity_fails(self) -> None:
+        self.assert_valid()
+        self.fixture.write(
+            "profile.yaml",
+            "profile_name: "
+            + "Aust"
+            + "in_"
+            + "Will"
+            + "man\n",
+        )
+        self.fixture.track_all()
+
+        self.assert_invalid("blocked Willman-specific identity")
+
     def test_generic_home_services_market_content_outside_skill_passes(self) -> None:
         self.assert_valid()
         self.fixture.write(
@@ -210,15 +224,20 @@ class ValidateRepositoryTests(unittest.TestCase):
 
         self.assert_valid()
 
-    def test_hyphenated_home_services_assumption_inside_skill_fails(self) -> None:
+    def test_home_services_assumptions_inside_skill_fail(self) -> None:
         self.assert_valid()
-        self.fixture.write(
-            "skills/brand-thumbnail/notes.md",
-            "Use the " + "home" + "-services operating defaults.\n",
-        )
-        self.fixture.track_all()
+        for separator in (" ", "-"):
+            with self.subTest(separator=separator):
+                self.fixture.write(
+                    "skills/brand-thumbnail/notes.md",
+                    "Use the "
+                    + "home"
+                    + separator
+                    + "services operating defaults.\n",
+                )
+                self.fixture.track_all()
 
-        self.assert_invalid("blocked public-skill assumption")
+                self.assert_invalid("blocked public-skill assumption")
 
     def test_untracked_content_is_not_scanned(self) -> None:
         self.assert_valid()
@@ -272,7 +291,19 @@ class ValidateRepositoryTests(unittest.TestCase):
         self.assert_invalid("SKILL.md frontmatter is missing description")
 
     def test_semantically_empty_skill_frontmatter_values_fail(self) -> None:
-        empty_values = ("# comment only", "null", "~", '""', "''")
+        empty_values = (
+            "# comment only",
+            "null",
+            "~",
+            '""',
+            "''",
+            "[]",
+            "{}",
+            "|",
+            ">",
+            "!!null",
+            "&empty",
+        )
         for value in empty_values:
             with self.subTest(value=value):
                 self.fixture.write(
@@ -286,6 +317,25 @@ class ValidateRepositoryTests(unittest.TestCase):
                 self.fixture.track_all()
 
                 self.assert_invalid("SKILL.md frontmatter is missing description")
+
+    def test_plain_and_quoted_frontmatter_values_pass(self) -> None:
+        valid_values = (
+            ("fixture-thumbnail", "Create a generic thumbnail fixture."),
+            ('"fixture-thumbnail"', "'Create a generic thumbnail fixture.'"),
+        )
+        for name, description in valid_values:
+            with self.subTest(name=name):
+                self.fixture.write(
+                    "skills/brand-thumbnail/SKILL.md",
+                    "---\n"
+                    f"name: {name}\n"
+                    f"description: {description}\n"
+                    "---\n\n"
+                    "# Fixture skill\n",
+                )
+                self.fixture.track_all()
+
+                self.assert_valid()
 
     def test_comment_only_skill_name_fails(self) -> None:
         self.assert_valid()

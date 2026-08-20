@@ -63,7 +63,10 @@ WILLMAN_SPECIFIC_TOKENS = (
     "#" + "96ff2b",
 )
 
-SKILL_SPECIFIC_BLOCKED_TOKENS = ("-".join(("home", "services")),)
+SKILL_SPECIFIC_BLOCKED_TOKENS = (
+    " ".join(("home", "services")),
+    "-".join(("home", "services")),
+)
 
 ALLOWED_IDENTITY_TEXT = {
     "LICENSE": (" ".join((PERSON_GIVEN_NAME.title(), PERSON_FAMILY_NAME.title())),),
@@ -171,10 +174,12 @@ def check_blocked_content(texts: dict[str, str]) -> list[str]:
                 )
                 break
         has_given_name = re.search(
-            rf"\b{re.escape(PERSON_GIVEN_NAME)}\b", lowered
+            rf"(?<![A-Za-z0-9]){re.escape(PERSON_GIVEN_NAME)}(?![A-Za-z0-9])",
+            lowered,
         )
         has_family_name = re.search(
-            rf"\b{re.escape(PERSON_FAMILY_NAME)}\b", lowered
+            rf"(?<![A-Za-z0-9]){re.escape(PERSON_FAMILY_NAME)}(?![A-Za-z0-9])",
+            lowered,
         )
         if has_given_name and has_family_name:
             errors.append(
@@ -276,8 +281,12 @@ def frontmatter_value_present(value: str | None) -> bool:
     scalar = strip_yaml_comment(value).strip()
     if not scalar or scalar.casefold() in {"null", "~"}:
         return False
-    if len(scalar) >= 2 and scalar[0] == scalar[-1] and scalar[0] in ("'", '"'):
+    if scalar[0] in ("'", '"'):
+        if len(scalar) < 2 or scalar[-1] != scalar[0]:
+            return False
         return bool(scalar[1:-1].strip())
+    if scalar[0] in "[{|>!&*":
+        return False
     return True
 
 
