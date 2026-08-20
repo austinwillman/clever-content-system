@@ -6,3 +6,5 @@
 clients/
 private/
 secrets/
+__pycache__/
+*.pyc

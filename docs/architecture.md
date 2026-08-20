@@ -34,6 +34,12 @@ Research remains private to the client workspace. The planned templates organize
 
 Inputs should be truthful, attributable, and current enough for the content decision. The engine does not turn incomplete research into invented claims. A production request needs actual source material or an explicit decision to work from a clearly bounded brief.
 
+## Content candidates
+
+A content candidate is the portable record that carries a proposal from research to production. Research skills emit candidates, evaluation skills refine them, approval orchestration decides on them, and production routes from them. `schemas/content-candidate.schema.json` declares the contract and `scripts/validate_candidate.py` enforces it, so one implementation serves skills, tests, and CI.
+
+A candidate cites the private source spans behind every material claim, keeps its lifecycle status separate from its human approval state, and carries a digest of the approved content so a later edit cannot inherit an earlier approval. Candidate records themselves are client data and stay in the private workspace. See the [content candidate contract](content-candidate-contract.md).
+
 ## Approval gate
 
 The workspace manifest defines the approval gate. Research and planning can produce proposals, but production and distribution require the approval state the client workspace specifies. No public skill may publish, schedule, or upload content without explicit authorization.
@@ -59,6 +65,9 @@ public engine and templates
 private client workspace
           |
           +--> private research and sources
+          |
+          v
+content candidates
           |
           v
 proposal and approval gate

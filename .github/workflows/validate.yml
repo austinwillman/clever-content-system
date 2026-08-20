@@ -21,3 +21,8 @@ jobs:
         run: python3 -m unittest discover -s tests -v
       - name: Run repository validator
         run: python3 scripts/validate_repo.py
+      - name: Run candidate contract validator
+        run: |
+          python3 scripts/validate_candidate.py \
+            schemas/examples/content-candidate.example.json \
+            templates/client-workspace/candidates/content-candidates.json

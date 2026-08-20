@@ -11,7 +11,11 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import NamedTuple
+from typing import Any, NamedTuple
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import validate_candidate
 
 
 REQUIRED_REPOSITORY_FILES = (
@@ -21,9 +25,14 @@ REQUIRED_REPOSITORY_FILES = (
     "README.md",
     "SECURITY.md",
     "docs/architecture.md",
+    "docs/content-candidate-contract.md",
     "schemas/content-system.schema.json",
+    "schemas/content-candidate.schema.json",
+    "schemas/examples/content-candidate.example.json",
     "scripts/validate_repo.py",
+    "scripts/validate_candidate.py",
     "tests/test_validate_repo.py",
+    "tests/test_validate_candidate.py",
     "templates/client-workspace/content-system.yaml",
     "templates/client-workspace/content-context.md",
     "templates/client-workspace/research/demand-map.csv",
@@ -31,6 +40,7 @@ REQUIRED_REPOSITORY_FILES = (
     "templates/client-workspace/sources/transcript-index.json",
     "templates/client-workspace/history/content-history.csv",
     "templates/client-workspace/approvals/approval-record.md",
+    "templates/client-workspace/candidates/content-candidates.json",
 )
 
 REQUIRED_SKILL_FILES = (
@@ -80,8 +90,13 @@ EMPTY_JSON_TEMPLATES = frozenset(
     (
         "templates/client-workspace/research/trend-library.json",
         "templates/client-workspace/sources/transcript-index.json",
+        "templates/client-workspace/candidates/content-candidates.json",
     )
 )
+
+CANDIDATE_SCHEMA_PATH = "schemas/content-candidate.schema.json"
+CANDIDATE_EXAMPLE_PATH = "schemas/examples/content-candidate.example.json"
+CANDIDATE_TEMPLATE_PATH = "templates/client-workspace/candidates/content-candidates.json"
 
 MANIFEST_PATH = "templates/client-workspace/content-system.yaml"
 WORKSPACE_TEMPLATE_PREFIX = "templates/client-workspace/"
@@ -529,6 +544,134 @@ def check_manifest_template(
     return errors
 
 
+def nested_value(document: Any, path: tuple[str, ...]) -> Any:
+    value: Any = document
+    for key in path:
+        if not isinstance(value, dict) or key not in value:
+            return None
+        value = value[key]
+    return value
+
+
+def check_candidate_contract(texts: dict[str, str]) -> list[str]:
+    """Keep the declarative candidate schema and its validator from drifting."""
+    errors: list[str] = []
+    schema_text = texts.get(CANDIDATE_SCHEMA_PATH)
+    if schema_text is None:
+        return errors
+    try:
+        schema = json.loads(schema_text)
+    except json.JSONDecodeError:
+        return errors
+    if not isinstance(schema, dict):
+        errors.append(f"candidate schema must be an object: {CANDIDATE_SCHEMA_PATH}")
+        return errors
+
+    if not isinstance(schema.get("$id"), str) or not schema["$id"].startswith(
+        "https://example.invalid/"
+    ):
+        errors.append("candidate schema $id must use the example.invalid namespace")
+    if not isinstance(schema.get("title"), str) or not schema["title"].strip():
+        errors.append("candidate schema is missing a title")
+    if schema.get("type") != "object":
+        errors.append("candidate schema must describe an object")
+    if schema.get("additionalProperties") is not False:
+        errors.append("candidate schema must reject unsupported top-level fields")
+
+    required = schema.get("required")
+    expected_required = list(validate_candidate.REQUIRED_FIELDS)
+    if required != expected_required:
+        errors.append(
+            "candidate schema required fields must match the candidate validator"
+        )
+
+    properties = schema.get("properties")
+    if not isinstance(properties, dict):
+        errors.append("candidate schema is missing properties")
+        properties = {}
+    expected_properties = set(expected_required) | set(validate_candidate.OPTIONAL_FIELDS)
+    if set(properties) != expected_properties:
+        errors.append(
+            "candidate schema properties must match the candidate validator fields"
+        )
+
+    if nested_value(schema, ("properties", "schema_version", "const")) != (
+        validate_candidate.SCHEMA_VERSION
+    ):
+        errors.append(
+            "candidate schema version must match the candidate validator version"
+        )
+
+    enum_checks = (
+        (("properties", "status", "enum"), validate_candidate.CANDIDATE_STATUSES),
+        (
+            ("properties", "approval", "properties", "state", "enum"),
+            validate_candidate.APPROVAL_STATES,
+        ),
+        (
+            ("properties", "source", "properties", "type", "enum"),
+            validate_candidate.SOURCE_TYPES,
+        ),
+        (
+            (
+                "properties",
+                "proposal",
+                "properties",
+                "format",
+                "properties",
+                "type",
+                "enum",
+            ),
+            validate_candidate.FORMAT_TYPES,
+        ),
+        (
+            ("properties", "assessment", "properties", "confidence", "enum"),
+            validate_candidate.CONFIDENCE_LEVELS,
+        ),
+    )
+    for pointer, expected_values in enum_checks:
+        if nested_value(schema, pointer) != list(expected_values):
+            errors.append(
+                "candidate schema enum must match the candidate validator: "
+                + ".".join(pointer)
+            )
+
+    example_text = texts.get(CANDIDATE_EXAMPLE_PATH)
+    if example_text is not None:
+        try:
+            example = json.loads(example_text)
+        except json.JSONDecodeError:
+            example = None
+        if example is not None:
+            for error in validate_candidate.validate_document(example):
+                errors.append(f"candidate example is invalid: {error}")
+            for candidate in example if isinstance(example, list) else [example]:
+                if not isinstance(candidate, dict):
+                    continue
+                if candidate.get("status") not in validate_candidate.UNAPPROVED_STATUSES:
+                    errors.append(
+                        "candidate example must remain an unapproved proposal: "
+                        f"{CANDIDATE_EXAMPLE_PATH}"
+                    )
+                state = nested_value(candidate, ("approval", "state"))
+                if state not in validate_candidate.UNDECIDED_APPROVAL_STATES:
+                    errors.append(
+                        "candidate example must not carry an approval decision: "
+                        f"{CANDIDATE_EXAMPLE_PATH}"
+                    )
+
+    template_text = texts.get(CANDIDATE_TEMPLATE_PATH)
+    if template_text is not None:
+        try:
+            template = json.loads(template_text)
+        except json.JSONDecodeError:
+            template = None
+        if template is not None:
+            for error in validate_candidate.validate_document(template):
+                errors.append(f"candidate template is invalid: {error}")
+    return errors
+
+
 def validate_repository(root: Path) -> list[str]:
     root = root.resolve()
     index, errors = indexed_files(root)
@@ -542,6 +685,7 @@ def validate_repository(root: Path) -> list[str]:
     errors.extend(check_shell_scripts(index))
     errors.extend(check_skill_frontmatter(texts))
     errors.extend(check_manifest_template(index, texts))
+    errors.extend(check_candidate_contract(texts))
     return errors
 
 

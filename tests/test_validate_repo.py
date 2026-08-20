@@ -1,3 +1,4 @@
+import json
 import subprocess
 import sys
 import tempfile
@@ -7,6 +8,12 @@ from pathlib import Path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 VALIDATOR = REPOSITORY_ROOT / "scripts" / "validate_repo.py"
+CANDIDATE_SCHEMA = REPOSITORY_ROOT / "schemas" / "content-candidate.schema.json"
+CANDIDATE_EXAMPLE = (
+    REPOSITORY_ROOT / "schemas" / "examples" / "content-candidate.example.json"
+)
+CANDIDATE_SCHEMA_TEXT = CANDIDATE_SCHEMA.read_text(encoding="utf-8")
+CANDIDATE_EXAMPLE_TEXT = CANDIDATE_EXAMPLE.read_text(encoding="utf-8")
 
 VALID_MANIFEST = """schema_version: "1.0"
 client:
@@ -76,7 +83,10 @@ REQUIRED_REPOSITORY_FILES = {
     "README.md": "# Fixture repository\n",
     "SECURITY.md": "# Security\n",
     "docs/architecture.md": "# Architecture\n",
+    "docs/content-candidate-contract.md": "# Content candidate contract\n",
     "schemas/content-system.schema.json": "{}\n",
+    "schemas/content-candidate.schema.json": CANDIDATE_SCHEMA_TEXT,
+    "schemas/examples/content-candidate.example.json": CANDIDATE_EXAMPLE_TEXT,
     "templates/client-workspace/content-system.yaml": VALID_MANIFEST,
     "templates/client-workspace/content-context.md": "# Content context\n",
     "templates/client-workspace/research/demand-map.csv": "topic,intent\n",
@@ -84,9 +94,12 @@ REQUIRED_REPOSITORY_FILES = {
     "templates/client-workspace/sources/transcript-index.json": "[]\n",
     "templates/client-workspace/history/content-history.csv": "item_id,status\n",
     "templates/client-workspace/approvals/approval-record.md": "# Approval record\n",
+    "templates/client-workspace/candidates/content-candidates.json": "[]\n",
     ".github/workflows/validate.yml": "name: Validate\n",
     "scripts/validate_repo.py": "# Fixture validator path\n",
+    "scripts/validate_candidate.py": "# Fixture candidate validator path\n",
     "tests/test_validate_repo.py": "# Fixture test path\n",
+    "tests/test_validate_candidate.py": "# Fixture candidate test path\n",
 }
 
 REQUIRED_SKILL_FILES = {
@@ -645,6 +658,113 @@ class ValidateRepositoryTests(unittest.TestCase):
         self.fixture.track_all()
 
         self.assert_valid()
+    def write_candidate_schema(self, schema: dict) -> None:
+        self.fixture.write(
+            "schemas/content-candidate.schema.json",
+            json.dumps(schema, indent=2) + "\n",
+        )
+        self.fixture.track_all()
+
+    def write_candidate_example(self, example: dict) -> None:
+        self.fixture.write(
+            "schemas/examples/content-candidate.example.json",
+            json.dumps(example, indent=2) + "\n",
+        )
+        self.fixture.track_all()
+
+    def test_missing_candidate_schema_fails(self) -> None:
+        self.assert_valid()
+        (self.root / "schemas/content-candidate.schema.json").unlink()
+        self.fixture.track_all()
+
+        self.assert_invalid(
+            "missing required repository file: schemas/content-candidate.schema.json"
+        )
+
+    def test_missing_candidate_template_fails(self) -> None:
+        self.assert_valid()
+        path = self.root / "templates/client-workspace/candidates/content-candidates.json"
+        path.unlink()
+        self.fixture.track_all()
+
+        self.assert_invalid(
+            "missing required repository file: "
+            "templates/client-workspace/candidates/content-candidates.json"
+        )
+
+    def test_populated_candidate_template_fails(self) -> None:
+        self.assert_valid()
+        self.fixture.write(
+            "templates/client-workspace/candidates/content-candidates.json",
+            json.dumps([json.loads(CANDIDATE_EXAMPLE_TEXT)], indent=2) + "\n",
+        )
+        self.fixture.track_all()
+
+        self.assert_invalid(
+            "JSON template must be an empty array: "
+            "templates/client-workspace/candidates/content-candidates.json"
+        )
+
+    def test_candidate_schema_allowing_extra_fields_fails(self) -> None:
+        self.assert_valid()
+        schema = json.loads(CANDIDATE_SCHEMA_TEXT)
+        schema["additionalProperties"] = True
+        self.write_candidate_schema(schema)
+
+        self.assert_invalid(
+            "candidate schema must reject unsupported top-level fields"
+        )
+
+    def test_candidate_schema_enum_drift_fails(self) -> None:
+        self.assert_valid()
+        schema = json.loads(CANDIDATE_SCHEMA_TEXT)
+        schema["properties"]["approval"]["properties"]["state"]["enum"].remove("expired")
+        self.write_candidate_schema(schema)
+
+        self.assert_invalid("candidate schema enum must match the candidate validator")
+
+    def test_candidate_schema_required_field_drift_fails(self) -> None:
+        self.assert_valid()
+        schema = json.loads(CANDIDATE_SCHEMA_TEXT)
+        schema["required"].remove("approval")
+        self.write_candidate_schema(schema)
+
+        self.assert_invalid(
+            "candidate schema required fields must match the candidate validator"
+        )
+
+    def test_source_free_candidate_example_fails(self) -> None:
+        self.assert_valid()
+        example = json.loads(CANDIDATE_EXAMPLE_TEXT)
+        example["source"]["references"] = []
+        self.write_candidate_example(example)
+
+        self.assert_invalid("candidate example is invalid")
+
+    def test_approved_candidate_example_fails(self) -> None:
+        self.assert_valid()
+        example = json.loads(CANDIDATE_EXAMPLE_TEXT)
+        example["status"] = "approved"
+        self.write_candidate_example(example)
+
+        self.assert_invalid("candidate example must remain an unapproved proposal")
+
+    def test_candidate_example_carrying_a_decision_fails(self) -> None:
+        self.assert_valid()
+        example = json.loads(CANDIDATE_EXAMPLE_TEXT)
+        example["approval"] = {
+            "state": "rejected",
+            "record_reference": {
+                "locator": "approvals/approval-record.md",
+                "entry_id": "entry-1",
+            },
+            "decided_by": "workspace approval owner",
+            "decision_date": "2000-01-02",
+        }
+        example["status"] = "rejected"
+        self.write_candidate_example(example)
+
+        self.assert_invalid("candidate example must not carry an approval decision")
 
 
 if __name__ == "__main__":

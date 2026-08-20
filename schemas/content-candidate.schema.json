@@ -1,0 +1,346 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/client-content-system/schemas/content-candidate.schema.json",
+  "title": "Content Candidate",
+  "description": "Contract for a proposed content candidate. A candidate is a proposal. It is not approved, produced, distributed, or proven by default.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "candidate_id",
+    "created_date",
+    "status",
+    "pillar_id",
+    "topic",
+    "audience_problem",
+    "source",
+    "proposal",
+    "cta_stage",
+    "assessment",
+    "approval"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "candidate_id": { "$ref": "#/$defs/identifier" },
+    "created_date": { "$ref": "#/$defs/date" },
+    "status": {
+      "description": "Candidate lifecycle position. Production and publication outcomes are recorded in the private content history, not here.",
+      "type": "string",
+      "enum": ["proposed", "in_review", "needs_revision", "rejected", "approved"]
+    },
+    "pillar_id": {
+      "description": "Identifier of one configured workspace content pillar.",
+      "type": "string",
+      "minLength": 1
+    },
+    "topic": {
+      "description": "Short canonical topic label used for fatigue comparison against content history.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "audience_problem": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "references"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["transcript", "trend_signal", "demand_signal", "brief"]
+        },
+        "references": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/sourceReference" }
+        }
+      }
+    },
+    "proposal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hook", "core_claim", "supporting_evidence", "format"],
+      "properties": {
+        "hook": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "core_claim": { "$ref": "#/$defs/groundedStatement" },
+        "supporting_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/evidenceItem" }
+        },
+        "format": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "required_assets"],
+          "properties": {
+            "type": {
+              "description": "Deterministic production routing key.",
+              "type": "string",
+              "enum": [
+                "short_video",
+                "long_video",
+                "image_post",
+                "carousel",
+                "text_post",
+                "newsletter",
+                "audio"
+              ]
+            },
+            "required_assets": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": ["thumbnail", "cover_image", "captions", "graphic"]
+              }
+            },
+            "notes": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "cta_stage": {
+      "description": "Stage selected from the workspace CTA ladder.",
+      "type": "string",
+      "minLength": 1
+    },
+    "assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["confidence", "confidence_rationale", "uncertainties"],
+      "properties": {
+        "confidence": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "confidence_rationale": { "type": "string", "minLength": 1 },
+        "uncertainties": { "$ref": "#/$defs/noteList" },
+        "risk_notes": { "$ref": "#/$defs/noteList" },
+        "review_notes": { "$ref": "#/$defs/noteList" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "confidence": { "enum": ["low", "medium"] } },
+            "required": ["confidence"]
+          },
+          "then": {
+            "properties": { "uncertainties": { "minItems": 1 } }
+          }
+        }
+      ]
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state"],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["not_requested", "pending", "approved", "rejected", "expired"]
+        },
+        "record_reference": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["locator", "entry_id"],
+          "properties": {
+            "locator": { "$ref": "#/$defs/workspaceRelativePath" },
+            "entry_id": { "type": "string", "minLength": 1 }
+          }
+        },
+        "decided_by": { "type": "string", "minLength": 1 },
+        "decision_date": { "$ref": "#/$defs/date" },
+        "approved_content_digest": { "$ref": "#/$defs/digest" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "state": { "const": "approved" } },
+            "required": ["state"]
+          },
+          "then": {
+            "required": [
+              "record_reference",
+              "decided_by",
+              "decision_date",
+              "approved_content_digest"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": { "state": { "enum": ["rejected", "expired"] } },
+            "required": ["state"]
+          },
+          "then": {
+            "required": ["record_reference", "decided_by", "decision_date"]
+          }
+        },
+        {
+          "if": {
+            "properties": { "state": { "enum": ["not_requested", "pending"] } },
+            "required": ["state"]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                { "required": ["record_reference"] },
+                { "required": ["decided_by"] },
+                { "required": ["decision_date"] },
+                { "required": ["approved_content_digest"] }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "extensions": {
+      "description": "Optional skill-specific detail. Never authoritative for status, approval, or production routing.",
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]*$",
+        "not": {
+          "enum": [
+            "status",
+            "approval",
+            "source",
+            "proposal",
+            "assessment",
+            "schema_version",
+            "candidate_id"
+          ]
+        }
+      },
+      "additionalProperties": { "type": "object" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "approved" } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "approval": {
+            "properties": { "state": { "const": "approved" } }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "status": { "const": "rejected" } },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "approval": {
+            "properties": { "state": { "const": "rejected" } }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": { "enum": ["proposed", "in_review", "needs_revision"] }
+        },
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "approval": {
+            "properties": {
+              "state": { "enum": ["not_requested", "pending", "expired"] }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "workspaceRelativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+    },
+    "noteList": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "sourceReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference_id", "locator", "locator_detail", "retrieved_date"],
+      "properties": {
+        "reference_id": { "$ref": "#/$defs/identifier" },
+        "locator": {
+          "description": "Workspace-relative path to the private source material.",
+          "$ref": "#/$defs/workspaceRelativePath"
+        },
+        "locator_detail": {
+          "description": "Span inside the source, such as a timestamp range, line range, or row identifier.",
+          "type": "string",
+          "minLength": 1
+        },
+        "retrieved_date": { "$ref": "#/$defs/date" }
+      }
+    },
+    "groundedStatement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement", "reference_ids"],
+      "properties": {
+        "statement": { "type": "string", "minLength": 1 },
+        "reference_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/identifier" }
+        }
+      }
+    },
+    "evidenceItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement", "reference_ids", "strength"],
+      "properties": {
+        "statement": { "type": "string", "minLength": 1 },
+        "reference_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/identifier" }
+        },
+        "strength": {
+          "type": "string",
+          "enum": ["direct_quote", "paraphrase", "observed_metric", "inference"]
+        }
+      }
+    }
+  }
+}

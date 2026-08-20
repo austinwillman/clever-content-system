@@ -70,6 +70,7 @@ The completed foundation includes:
 - staged-content privacy and contract validation
 - regression tests and GitHub Actions CI
 - GitHub private vulnerability reporting
+- the content candidate contract and its validator, proposed and awaiting owner approval
 
 The remaining pipeline is intentionally not presented as implemented. Continue it in the order defined in `docs/roadmap.md`.
 
