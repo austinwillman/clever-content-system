@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "candidate_id": "candidate-example-0001",
+  "created_date": "2000-01-01",
+  "status": "proposed",
+  "pillar_id": "pillar-1",
+  "topic": "example-topic",
+  "audience_problem": "Example audience problem used only to illustrate the contract.",
+  "source": {
+    "type": "transcript",
+    "references": [
+      {
+        "reference_id": "example-reference-1",
+        "locator": "sources/example-transcript.md",
+        "locator_detail": "00:00:00-00:00:30",
+        "retrieved_date": "2000-01-01"
+      }
+    ]
+  },
+  "proposal": {
+    "hook": "Example hook text.",
+    "core_claim": {
+      "statement": "Example core claim carried by the cited example source.",
+      "reference_ids": ["example-reference-1"]
+    },
+    "supporting_evidence": [
+      {
+        "statement": "Example supporting statement from the same cited span.",
+        "reference_ids": ["example-reference-1"],
+        "strength": "paraphrase"
+      }
+    ],
+    "format": {
+      "type": "short_video",
+      "required_assets": ["thumbnail"]
+    }
+  },
+  "cta_stage": "awareness",
+  "assessment": {
+    "confidence": "low",
+    "confidence_rationale": "Example rationale. This fixture carries no real evidence.",
+    "uncertainties": [
+      "This is a contract fixture, so no real source material supports it."
+    ],
+    "risk_notes": [],
+    "review_notes": []
+  },
+  "approval": {
+    "state": "not_requested"
+  }
+}

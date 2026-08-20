@@ -23,9 +23,10 @@ The public foundation is designed to support a repeatable pipeline:
 
 1. Configure a client workspace from `templates/client-workspace`.
 2. Capture source and research locations in the workspace manifest.
-3. Use reusable skills to turn approved source material into production-ready content.
-4. Keep an explicit approval gate before production or distribution.
-5. Record outcomes and fatigue signals in the client workspace learning history.
+3. Turn private source material into content candidates that cite their sources.
+4. Use reusable skills to turn approved source material into production-ready content.
+5. Keep an explicit approval gate before production or distribution.
+6. Record outcomes and fatigue signals in the client workspace learning history.
 
 The repository ships the engine and templates. Each client supplies and retains its own private inputs, approvals, production assets, and history.
 
@@ -59,6 +60,8 @@ client-workspace/
     content-history.csv
   approvals/
     approval-record.md
+  candidates/
+    content-candidates.json
   thumbnail-brand.md
 ```
 
@@ -68,11 +71,11 @@ The workspace manifest records locations and operating rules. The workspace itse
 
 ```text
 docs/                         Architecture and public operating guidance
-schemas/                      Public workspace schemas
+schemas/                      Public workspace and candidate contracts
 templates/client-workspace/   Empty, reusable client workspace templates
 skills/brand-thumbnail/       Installable white-labeled thumbnail skill
-scripts/                      Standard-library repository validation
+scripts/                      Standard-library repository and contract validation
 tests/                        Validation tests
 ```
 
-See [architecture documentation](docs/architecture.md) for the end-to-end model, the [delivery roadmap](docs/roadmap.md) for the remaining pipeline, and [security guidance](SECURITY.md) before contributing. Claude Code should also follow the repository instructions in [`CLAUDE.md`](CLAUDE.md).
+See [architecture documentation](docs/architecture.md) for the end-to-end model, the [content candidate contract](docs/content-candidate-contract.md) for the shared proposal record, the [delivery roadmap](docs/roadmap.md) for the remaining pipeline, and [security guidance](SECURITY.md) before contributing. Claude Code should also follow the repository instructions in [`CLAUDE.md`](CLAUDE.md).
