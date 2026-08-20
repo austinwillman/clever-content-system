@@ -75,4 +75,4 @@ scripts/                      Standard-library repository validation
 tests/                        Validation tests
 ```
 
-See [architecture documentation](docs/architecture.md) for the end-to-end model and [security guidance](SECURITY.md) before contributing.
+See [architecture documentation](docs/architecture.md) for the end-to-end model, the [delivery roadmap](docs/roadmap.md) for the remaining pipeline, and [security guidance](SECURITY.md) before contributing. Claude Code should also follow the repository instructions in [`CLAUDE.md`](CLAUDE.md).
