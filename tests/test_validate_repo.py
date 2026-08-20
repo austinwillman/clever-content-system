@@ -10,7 +10,13 @@ VALIDATOR = REPOSITORY_ROOT / "scripts" / "validate_repo.py"
 
 REQUIRED_REPOSITORY_FILES = {
     ".gitignore": "clients/\nprivate/\nsecrets/\n.env\n.env.*\n!.env.example\n",
-    "LICENSE": "MIT License\n\nCopyright (c) 2026 " + "Austin" + " " + "Willman\n",
+    "LICENSE": (
+        "MIT License\n\nCopyright (c) 2026 "
+        + "Aust"
+        + "in "
+        + "Will"
+        + "man\n"
+    ),
     "README.md": "# Fixture repository\n",
     "SECURITY.md": "# Security\n",
     "docs/architecture.md": "# Architecture\n",
@@ -72,6 +78,11 @@ class RepositoryFixture:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
 
+    def write_bytes(self, relative_path: str, content: bytes) -> None:
+        path = self.root / relative_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+
     def track_all(self) -> None:
         subprocess.run(
             ["git", "-C", str(self.root), "add", "-A"],
@@ -115,12 +126,14 @@ class ValidateRepositoryTests(unittest.TestCase):
     def test_missing_required_repository_file_fails(self) -> None:
         self.assert_valid()
         (self.root / "README.md").unlink()
+        self.fixture.track_all()
 
         self.assert_invalid("missing required repository file: README.md")
 
     def test_missing_required_skill_file_fails(self) -> None:
         self.assert_valid()
         (self.root / "skills/brand-thumbnail/references/layouts.md").unlink()
+        self.fixture.track_all()
 
         self.assert_invalid(
             "missing required skill file: skills/brand-thumbnail/references/layouts.md"
@@ -144,6 +157,69 @@ class ValidateRepositoryTests(unittest.TestCase):
 
         self.assert_invalid("blocked Willman-specific token")
 
+    def test_staged_private_content_hidden_by_safe_worktree_copy_fails(self) -> None:
+        self.assert_valid()
+        self.fixture.write(
+            "notes.md", "Asset: /" + "Users/example/private-client/logo.png\n"
+        )
+        self.fixture.track_all()
+        self.fixture.write("notes.md", "No private content here.\n")
+
+        self.assert_invalid("blocked private path")
+
+    def test_tracked_symlink_target_blob_is_scanned(self) -> None:
+        self.assert_valid()
+        link = self.root / "asset-link"
+        link.symlink_to("/" + "Vol" + "umes/private-client/logo.png")
+        self.fixture.track_all()
+
+        self.assert_invalid("blocked private path")
+
+    def test_nul_containing_tracked_blob_fails(self) -> None:
+        self.assert_valid()
+        self.fixture.write_bytes("notes.md", b"public text\x00hidden content\n")
+        self.fixture.track_all()
+
+        self.assert_invalid("NUL byte in tracked public file")
+
+    def test_separated_identity_fields_fail(self) -> None:
+        self.assert_valid()
+        self.fixture.write(
+            "profile.yaml",
+            "first_name: "
+            + "Aust"
+            + "in\nlast_name: "
+            + "Will"
+            + "man\n",
+        )
+        self.fixture.track_all()
+
+        self.assert_invalid("blocked Willman-specific identity")
+
+    def test_generic_home_services_market_content_outside_skill_passes(self) -> None:
+        self.assert_valid()
+        self.fixture.write(
+            "market.md",
+            "A generic "
+            + "home"
+            + " services and "
+            + "home"
+            + "-services market overview.\n",
+        )
+        self.fixture.track_all()
+
+        self.assert_valid()
+
+    def test_hyphenated_home_services_assumption_inside_skill_fails(self) -> None:
+        self.assert_valid()
+        self.fixture.write(
+            "skills/brand-thumbnail/notes.md",
+            "Use the " + "home" + "-services operating defaults.\n",
+        )
+        self.fixture.track_all()
+
+        self.assert_invalid("blocked public-skill assumption")
+
     def test_untracked_content_is_not_scanned(self) -> None:
         self.assert_valid()
         self.fixture.write(
@@ -155,19 +231,23 @@ class ValidateRepositoryTests(unittest.TestCase):
     def test_invalid_json_fails(self) -> None:
         self.assert_valid()
         self.fixture.write("templates/client-workspace/research/trend-library.json", "{\n")
+        self.fixture.track_all()
 
         self.assert_invalid("invalid JSON")
 
     def test_csv_template_without_headers_fails(self) -> None:
         self.assert_valid()
         self.fixture.write("templates/client-workspace/research/demand-map.csv", "")
+        self.fixture.track_all()
 
         self.assert_invalid("CSV template has no header")
 
-    def test_non_executable_shell_script_fails(self) -> None:
+    def test_staged_non_executable_mode_hidden_by_worktree_mode_fails(self) -> None:
         self.assert_valid()
         script = self.root / "skills/brand-thumbnail/scripts/analyze-video.sh"
         script.chmod(0o644)
+        self.fixture.track_all()
+        script.chmod(0o755)
 
         self.assert_invalid("shell script is not executable")
 
@@ -177,6 +257,7 @@ class ValidateRepositoryTests(unittest.TestCase):
             "skills/brand-thumbnail/SKILL.md",
             "---\ndescription: Generic fixture.\n---\n\n# Fixture skill\n",
         )
+        self.fixture.track_all()
 
         self.assert_invalid("SKILL.md frontmatter is missing name")
 
@@ -186,17 +267,51 @@ class ValidateRepositoryTests(unittest.TestCase):
             "skills/brand-thumbnail/SKILL.md",
             "---\nname: fixture-thumbnail\n---\n\n# Fixture skill\n",
         )
+        self.fixture.track_all()
 
         self.assert_invalid("SKILL.md frontmatter is missing description")
+
+    def test_semantically_empty_skill_frontmatter_values_fail(self) -> None:
+        empty_values = ("# comment only", "null", "~", '""', "''")
+        for value in empty_values:
+            with self.subTest(value=value):
+                self.fixture.write(
+                    "skills/brand-thumbnail/SKILL.md",
+                    "---\n"
+                    "name: fixture-thumbnail\n"
+                    f"description: {value}\n"
+                    "---\n\n"
+                    "# Fixture skill\n",
+                )
+                self.fixture.track_all()
+
+                self.assert_invalid("SKILL.md frontmatter is missing description")
+
+    def test_comment_only_skill_name_fails(self) -> None:
+        self.assert_valid()
+        self.fixture.write(
+            "skills/brand-thumbnail/SKILL.md",
+            "---\n"
+            "name: # comment only\n"
+            "description: Generic fixture.\n"
+            "---\n\n"
+            "# Fixture skill\n",
+        )
+        self.fixture.track_all()
+
+        self.assert_invalid("SKILL.md frontmatter is missing name")
 
     def test_required_identity_exceptions_are_narrowly_allowed(self) -> None:
         self.fixture.write(
             "SECURITY.md",
             "Report privately: "
             "https://github.com/"
-            + "austin"
-            + "willman/client-content-system/security/advisories/new\n",
+            + "aust"
+            + "in"
+            + "will"
+            + "man/client-content-system/security/advisories/new\n",
         )
+        self.fixture.track_all()
 
         self.assert_valid()
 

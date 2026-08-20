@@ -5,12 +5,13 @@ from __future__ import annotations
 
 import argparse
 import csv
+import io
 import json
 import re
-import stat
 import subprocess
 import sys
 from pathlib import Path
+from typing import NamedTuple
 
 
 REQUIRED_REPOSITORY_FILES = (
@@ -45,77 +46,117 @@ REQUIRED_SKILL_FILES = (
 PRIVATE_PATH_PATTERNS = (
     re.compile(r"/" + r"Users/[A-Za-z0-9._-]+(?:/|$)"),
     re.compile(r"/" + r"home/[A-Za-z0-9._-]+(?:/|$)"),
+    re.compile(r"/" + r"Volumes/[A-Za-z0-9._ -]+(?:/|$)"),
     re.compile(r"(?:[A-Za-z]:)?\\Users\\[A-Za-z0-9._-]+(?:\\|$)", re.IGNORECASE),
 )
 
+PERSON_GIVEN_NAME = "aust" + "in"
+PERSON_FAMILY_NAME = "will" + "man"
+
 WILLMAN_SPECIFIC_TOKENS = (
-    " ".join(("austin", "willman")),
-    "".join(("austin", "willman")),
-    " ".join(("willman", "ventures")),
-    "".join(("willman", "ic")),
-    "-".join(("willman", "thumbnail")),
+    " ".join((PERSON_GIVEN_NAME, PERSON_FAMILY_NAME)),
+    "".join((PERSON_GIVEN_NAME, PERSON_FAMILY_NAME)),
+    " ".join((PERSON_FAMILY_NAME, "ventures")),
+    "".join((PERSON_FAMILY_NAME, "ic")),
+    "-".join((PERSON_FAMILY_NAME, "thumbnail")),
     " ".join(("human", "leverage")),
-    "-".join(("home", "services")),
-    " ".join(("home", "services")),
     "#" + "96ff2b",
 )
 
+SKILL_SPECIFIC_BLOCKED_TOKENS = ("-".join(("home", "services")),)
+
 ALLOWED_IDENTITY_TEXT = {
-    "LICENSE": (" ".join(("Austin", "Willman")),),
+    "LICENSE": (" ".join((PERSON_GIVEN_NAME.title(), PERSON_FAMILY_NAME.title())),),
     "SECURITY.md": (
         "https://github.com/"
-        + "".join(("austin", "willman"))
+        + "".join((PERSON_GIVEN_NAME, PERSON_FAMILY_NAME))
         + "/client-content-system/security/advisories/new",
     ),
 }
 
 
-def tracked_files(root: Path) -> tuple[list[str], list[str]]:
+class IndexEntry(NamedTuple):
+    mode: str
+    object_id: str
+    path: str
+    data: bytes
+
+
+def indexed_files(root: Path) -> tuple[dict[str, IndexEntry], list[str]]:
     result = subprocess.run(
-        ["git", "-C", str(root), "ls-files", "-z", "--cached"],
+        ["git", "-C", str(root), "ls-files", "--stage", "-z"],
         capture_output=True,
         check=False,
     )
     if result.returncode != 0:
         detail = result.stderr.decode("utf-8", errors="replace").strip()
-        return [], [f"could not list tracked files: {detail}"]
-    paths = result.stdout.decode("utf-8", errors="surrogateescape").split("\0")
-    return [path for path in paths if path], []
+        return {}, [f"could not read Git index: {detail}"]
+
+    entries: dict[str, IndexEntry] = {}
+    errors: list[str] = []
+    blob_cache: dict[str, bytes] = {}
+    for record in result.stdout.split(b"\0"):
+        if not record:
+            continue
+        try:
+            metadata, path_bytes = record.split(b"\t", 1)
+            mode_bytes, object_id_bytes, stage_bytes = metadata.split(b" ", 2)
+        except ValueError:
+            errors.append("could not parse a Git index entry")
+            continue
+        path = path_bytes.decode("utf-8", errors="surrogateescape")
+        stage = stage_bytes.decode("ascii", errors="replace")
+        if stage != "0":
+            errors.append(f"unmerged Git index entry: {path}")
+            continue
+        mode = mode_bytes.decode("ascii", errors="replace")
+        object_id = object_id_bytes.decode("ascii", errors="replace")
+        if object_id not in blob_cache:
+            blob_result = subprocess.run(
+                ["git", "-C", str(root), "cat-file", "blob", object_id],
+                capture_output=True,
+                check=False,
+            )
+            if blob_result.returncode != 0:
+                detail = blob_result.stderr.decode("utf-8", errors="replace").strip()
+                errors.append(f"could not read indexed blob for {path}: {detail}")
+                continue
+            blob_cache[object_id] = blob_result.stdout
+        entries[path] = IndexEntry(mode, object_id, path, blob_cache[object_id])
+    return entries, errors
 
 
-def check_required_files(root: Path, tracked: set[str]) -> list[str]:
+def check_required_files(index: dict[str, IndexEntry]) -> list[str]:
     errors: list[str] = []
     for relative_path in REQUIRED_REPOSITORY_FILES:
-        path = root / relative_path
-        if not path.is_file():
+        if relative_path not in index:
             errors.append(f"missing required repository file: {relative_path}")
-        elif relative_path not in tracked:
-            errors.append(f"required repository file is not tracked: {relative_path}")
     for relative_path in REQUIRED_SKILL_FILES:
-        path = root / relative_path
-        if not path.is_file():
+        if relative_path not in index:
             errors.append(f"missing required skill file: {relative_path}")
-        elif relative_path not in tracked:
-            errors.append(f"required skill file is not tracked: {relative_path}")
     return errors
 
 
-def read_public_text(path: Path) -> str:
-    data = path.read_bytes()
-    if b"\0" in data:
-        return ""
-    return data.decode("utf-8", errors="replace")
-
-
-def check_blocked_content(root: Path, tracked: list[str]) -> list[str]:
+def decode_public_text(
+    index: dict[str, IndexEntry],
+) -> tuple[dict[str, str], list[str]]:
+    texts: dict[str, str] = {}
     errors: list[str] = []
-    for relative_path in tracked:
-        path = root / relative_path
-        if not path.is_file():
+    for relative_path, entry in index.items():
+        if b"\0" in entry.data:
+            errors.append(f"NUL byte in tracked public file: {relative_path}")
             continue
-        text = read_public_text(path)
-        if not text:
-            continue
+        try:
+            texts[relative_path] = entry.data.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            errors.append(f"tracked public file is not UTF-8: {relative_path}: {exc}")
+    return texts, errors
+
+
+def check_blocked_content(texts: dict[str, str]) -> list[str]:
+    errors: list[str] = []
+    for relative_path, original_text in texts.items():
+        text = original_text
         for allowed_text in ALLOWED_IDENTITY_TEXT.get(relative_path, ()):
             text = text.replace(allowed_text, "")
         lowered = text.casefold()
@@ -129,39 +170,48 @@ def check_blocked_content(root: Path, tracked: list[str]) -> list[str]:
                     f"blocked Willman-specific token in tracked file: {relative_path}"
                 )
                 break
+        has_given_name = re.search(
+            rf"\b{re.escape(PERSON_GIVEN_NAME)}\b", lowered
+        )
+        has_family_name = re.search(
+            rf"\b{re.escape(PERSON_FAMILY_NAME)}\b", lowered
+        )
+        if has_given_name and has_family_name:
+            errors.append(
+                f"blocked Willman-specific identity in tracked file: {relative_path}"
+            )
+        if relative_path.startswith("skills/brand-thumbnail/"):
+            for token in SKILL_SPECIFIC_BLOCKED_TOKENS:
+                if token in lowered:
+                    errors.append(
+                        f"blocked public-skill assumption in tracked file: {relative_path}"
+                    )
+                    break
     return errors
 
 
-def check_json_files(root: Path, tracked: list[str]) -> list[str]:
+def check_json_files(texts: dict[str, str]) -> list[str]:
     errors: list[str] = []
-    for relative_path in tracked:
+    for relative_path, text in texts.items():
         if not relative_path.endswith(".json"):
             continue
-        path = root / relative_path
-        if not path.is_file():
-            continue
         try:
-            with path.open(encoding="utf-8") as handle:
-                json.load(handle)
-        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            json.loads(text)
+        except json.JSONDecodeError as exc:
             errors.append(f"invalid JSON in {relative_path}: {exc}")
     return errors
 
 
-def check_csv_templates(root: Path, tracked: list[str]) -> list[str]:
+def check_csv_templates(texts: dict[str, str]) -> list[str]:
     errors: list[str] = []
-    for relative_path in tracked:
+    for relative_path, text in texts.items():
         if not (
             relative_path.startswith("templates/") and relative_path.endswith(".csv")
         ):
             continue
-        path = root / relative_path
-        if not path.is_file():
-            continue
         try:
-            with path.open(newline="", encoding="utf-8") as handle:
-                header = next(csv.reader(handle), None)
-        except (OSError, UnicodeError, csv.Error) as exc:
+            header = next(csv.reader(io.StringIO(text, newline="")), None)
+        except csv.Error as exc:
             errors.append(f"could not read CSV template {relative_path}: {exc}")
             continue
         if header is None or not header or any(not cell.strip() for cell in header):
@@ -169,16 +219,12 @@ def check_csv_templates(root: Path, tracked: list[str]) -> list[str]:
     return errors
 
 
-def check_shell_scripts(root: Path, tracked: list[str]) -> list[str]:
+def check_shell_scripts(index: dict[str, IndexEntry]) -> list[str]:
     errors: list[str] = []
-    for relative_path in tracked:
+    for relative_path, entry in index.items():
         if not relative_path.endswith(".sh"):
             continue
-        path = root / relative_path
-        if not path.is_file():
-            continue
-        executable_bits = stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
-        if path.stat().st_mode & executable_bits == 0:
+        if entry.mode != "100755":
             errors.append(f"shell script is not executable: {relative_path}")
     return errors
 
@@ -198,36 +244,71 @@ def parse_frontmatter(text: str) -> dict[str, str] | None:
         if ":" not in line or line[:1].isspace():
             continue
         key, value = line.split(":", 1)
-        values[key.strip()] = value.strip().strip("'\"")
+        values[key.strip()] = value.strip()
     return values
 
 
-def check_skill_frontmatter(root: Path, tracked: list[str]) -> list[str]:
+def strip_yaml_comment(value: str) -> str:
+    quote: str | None = None
+    escaped = False
+    for index, character in enumerate(value):
+        if escaped:
+            escaped = False
+            continue
+        if quote == '"' and character == "\\":
+            escaped = True
+            continue
+        if quote:
+            if character == quote:
+                quote = None
+            continue
+        if character in ("'", '"'):
+            quote = character
+            continue
+        if character == "#" and (index == 0 or value[index - 1].isspace()):
+            return value[:index].rstrip()
+    return value.strip()
+
+
+def frontmatter_value_present(value: str | None) -> bool:
+    if value is None:
+        return False
+    scalar = strip_yaml_comment(value).strip()
+    if not scalar or scalar.casefold() in {"null", "~"}:
+        return False
+    if len(scalar) >= 2 and scalar[0] == scalar[-1] and scalar[0] in ("'", '"'):
+        return bool(scalar[1:-1].strip())
+    return True
+
+
+def check_skill_frontmatter(texts: dict[str, str]) -> list[str]:
     errors: list[str] = []
-    for relative_path in tracked:
+    for relative_path, text in texts.items():
         if Path(relative_path).name != "SKILL.md":
             continue
-        path = root / relative_path
-        if not path.is_file():
-            continue
-        frontmatter = parse_frontmatter(read_public_text(path))
-        if frontmatter is None or not frontmatter.get("name"):
+        frontmatter = parse_frontmatter(text)
+        if frontmatter is None or not frontmatter_value_present(
+            frontmatter.get("name")
+        ):
             errors.append(f"SKILL.md frontmatter is missing name: {relative_path}")
-        if frontmatter is None or not frontmatter.get("description"):
+        if frontmatter is None or not frontmatter_value_present(
+            frontmatter.get("description")
+        ):
             errors.append(f"SKILL.md frontmatter is missing description: {relative_path}")
     return errors
 
 
 def validate_repository(root: Path) -> list[str]:
     root = root.resolve()
-    tracked, errors = tracked_files(root)
-    tracked_set = set(tracked)
-    errors.extend(check_required_files(root, tracked_set))
-    errors.extend(check_blocked_content(root, tracked))
-    errors.extend(check_json_files(root, tracked))
-    errors.extend(check_csv_templates(root, tracked))
-    errors.extend(check_shell_scripts(root, tracked))
-    errors.extend(check_skill_frontmatter(root, tracked))
+    index, errors = indexed_files(root)
+    errors.extend(check_required_files(index))
+    texts, text_errors = decode_public_text(index)
+    errors.extend(text_errors)
+    errors.extend(check_blocked_content(texts))
+    errors.extend(check_json_files(texts))
+    errors.extend(check_csv_templates(texts))
+    errors.extend(check_shell_scripts(index))
+    errors.extend(check_skill_frontmatter(texts))
     return errors
 
 
