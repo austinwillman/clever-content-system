@@ -1,0 +1,4 @@
+interface:
+  display_name: "Brand Thumbnail"
+  short_description: "Create brand-safe thumbnails from source media"
+  default_prompt: "Use $brand-thumbnail to create a finished thumbnail from this source media."
