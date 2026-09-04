@@ -2,212 +2,139 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/clever-content-system/schemas/content-system.schema.json",
   "title": "Clever Content System Manifest",
-  "description": "Contract for a private client workspace manifest.",
+  "description": "Portable description of a private client workspace manifest. Runtime enforcement lives in lib/config.mjs; this document exists so the contract is readable and portable outside the Node engine.",
   "type": "object",
-  "additionalProperties": false,
   "required": [
     "schema_version",
-    "client",
-    "active_90_day_objective",
-    "content_pillars",
-    "cadence",
-    "cta_ladder",
-    "locations",
+    "client_id",
+    "client_name",
+    "initiative",
+    "pillars",
+    "content_output",
+    "cta_classes",
+    "cta_destinations",
+    "fatigue",
     "approval_gate",
-    "fatigue_rules",
-    "last_refresh_dates"
+    "assets",
+    "research_sources",
+    "last_research_refresh_date",
+    "last_content_history_refresh_date"
   ],
   "properties": {
-    "schema_version": {
-      "type": "string",
-      "const": "1.0"
-    },
-    "client": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "client_id": { "type": "string", "minLength": 1, "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "client_name": { "type": "string", "minLength": 1 },
+    "positioning": { "type": "string" },
+    "initiative": {
       "type": "object",
-      "additionalProperties": false,
-      "required": ["identifier", "display_name"],
+      "required": ["id", "horizon_days", "objective"],
       "properties": {
-        "identifier": { "type": "string", "minLength": 1 },
-        "display_name": { "type": "string", "minLength": 1 }
+        "id": { "type": "string", "minLength": 1 },
+        "horizon_days": { "type": "integer", "minimum": 1 },
+        "objective": { "type": "string", "minLength": 1 }
       }
     },
-    "active_90_day_objective": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["statement", "success_metric", "target_value"],
-      "properties": {
-        "statement": { "type": "string", "minLength": 1 },
-        "success_metric": { "type": "string", "minLength": 1 },
-        "target_value": { "type": "string", "minLength": 1 }
-      }
-    },
-    "content_pillars": {
+    "pillars": {
       "type": "array",
-      "minItems": 4,
-      "maxItems": 4,
-      "items": { "$ref": "#/$defs/contentPillar" }
-    },
-    "cadence": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["cycle_days", "days"],
-      "properties": {
-        "cycle_days": { "type": "integer", "const": 6 },
-        "days": {
-          "type": "array",
-          "minItems": 6,
-          "maxItems": 6,
-          "prefixItems": [
-            {
-              "allOf": [
-                { "$ref": "#/$defs/cadenceDay" },
-                { "properties": { "day": { "const": 1 } } }
-              ]
-            },
-            {
-              "allOf": [
-                { "$ref": "#/$defs/cadenceDay" },
-                { "properties": { "day": { "const": 2 } } }
-              ]
-            },
-            {
-              "allOf": [
-                { "$ref": "#/$defs/cadenceDay" },
-                { "properties": { "day": { "const": 3 } } }
-              ]
-            },
-            {
-              "allOf": [
-                { "$ref": "#/$defs/cadenceDay" },
-                { "properties": { "day": { "const": 4 } } }
-              ]
-            },
-            {
-              "allOf": [
-                { "$ref": "#/$defs/cadenceDay" },
-                { "properties": { "day": { "const": 5 } } }
-              ]
-            },
-            {
-              "allOf": [
-                { "$ref": "#/$defs/cadenceDay" },
-                { "properties": { "day": { "const": 6 } } }
-              ]
-            }
-          ],
-          "items": false
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "label": { "type": "string" }
         }
       }
     },
-    "cta_ladder": {
-      "type": "array",
-      "minItems": 1,
-      "items": { "$ref": "#/$defs/ctaStep" }
-    },
-    "locations": {
+    "content_output": {
       "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "content_context",
-        "demand_map",
-        "trend_library",
-        "transcript_index",
-        "content_history"
-      ],
+      "required": ["allowed_formats", "batch_size"],
       "properties": {
-        "content_context": { "$ref": "#/$defs/relativePath" },
-        "demand_map": { "$ref": "#/$defs/relativePath" },
-        "trend_library": { "$ref": "#/$defs/relativePath" },
-        "transcript_index": { "$ref": "#/$defs/relativePath" },
-        "content_history": { "$ref": "#/$defs/relativePath" }
+        "allowed_formats": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "enum": ["video"] }
+        },
+        "batch_size": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "cta_classes": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "cta_destinations": {
+      "type": "object",
+      "description": "Every declared CTA class needs at least one destination. A destination that is not live is recorded as available: false rather than omitted.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["class", "available"],
+        "properties": {
+          "class": { "type": "string", "minLength": 1 },
+          "available": { "type": "boolean" }
+        }
+      }
+    },
+    "fatigue": {
+      "type": "object",
+      "required": ["topic_cooldown_days", "max_hook_uses_per_seven_posts"],
+      "properties": {
+        "topic_cooldown_days": { "type": "integer", "minimum": 1 },
+        "max_hook_uses_per_seven_posts": { "type": "integer", "minimum": 1, "maximum": 7 },
+        "hook_frequency_window_posts": { "type": "integer", "minimum": 1 }
       }
     },
     "approval_gate": {
       "type": "object",
-      "additionalProperties": false,
       "required": ["required_before", "approved_by", "record_location"],
       "properties": {
-        "required_before": {
-          "type": "string",
-          "enum": ["planning", "production", "distribution"]
-        },
+        "required_before": { "type": "string", "enum": ["production", "distribution"] },
         "approved_by": { "type": "string", "minLength": 1 },
-        "record_location": { "$ref": "#/$defs/relativePath" }
+        "record_location": { "type": "string", "minLength": 1 }
       }
     },
-    "fatigue_rules": {
+    "sources": {
       "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "lookback_days",
-        "max_reuses_per_topic",
-        "max_reuses_per_hook",
-        "action_when_triggered"
-      ],
+      "description": "Client-owned source declarations. approved_recording_ids, when present, is the exact set of transcript recordings the workspace expects.",
       "properties": {
-        "lookback_days": { "type": "integer", "minimum": 1 },
-        "max_reuses_per_topic": { "type": "integer", "minimum": 0 },
-        "max_reuses_per_hook": { "type": "integer", "minimum": 0 },
-        "action_when_triggered": { "type": "string", "minLength": 1 }
+        "approved_recording_ids": { "type": "array", "items": { "type": "string", "minLength": 1 } }
       }
     },
-    "last_refresh_dates": {
+    "assets": {
       "type": "object",
-      "additionalProperties": false,
+      "description": "Workspace-relative paths. Every path must resolve inside the workspace directory.",
       "required": [
-        "content_context",
+        "context",
+        "client_foundation",
+        "topic_bank",
         "demand_map",
         "trend_library",
+        "hook_library",
+        "research_log",
         "transcript_index",
         "content_history"
       ],
-      "properties": {
-        "content_context": { "$ref": "#/$defs/refreshDate" },
-        "demand_map": { "$ref": "#/$defs/refreshDate" },
-        "trend_library": { "$ref": "#/$defs/refreshDate" },
-        "transcript_index": { "$ref": "#/$defs/refreshDate" },
-        "content_history": { "$ref": "#/$defs/refreshDate" }
-      }
-    }
-  },
-  "$defs": {
-    "contentPillar": {
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "research_sources": {
       "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "name", "purpose"],
-      "properties": {
-        "id": { "type": "string", "minLength": 1 },
-        "name": { "type": "string", "minLength": 1 },
-        "purpose": { "type": "string", "minLength": 1 }
+      "description": "Declared research inputs and their honest availability. Both the foundation and batch_signal modes must be covered.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["status", "modes", "required", "subscription", "fallback"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["connected", "not_connected", "export_required", "optional", "unavailable"]
+          },
+          "modes": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "enum": ["foundation", "batch_signal"] }
+          },
+          "required": { "type": "boolean" },
+          "subscription": { "type": "string", "minLength": 1 },
+          "fallback": { "type": "string", "minLength": 1 }
+        }
       }
     },
-    "cadenceDay": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["day", "focus"],
-      "properties": {
-        "day": { "type": "integer", "minimum": 1, "maximum": 6 },
-        "focus": { "type": "string", "minLength": 1 }
-      }
-    },
-    "ctaStep": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["stage", "call_to_action", "destination"],
-      "properties": {
-        "stage": { "type": "string", "minLength": 1 },
-        "call_to_action": { "type": "string", "minLength": 1 },
-        "destination": { "type": "string", "minLength": 1 }
-      }
-    },
-    "relativePath": {
-      "type": "string",
-      "minLength": 1,
-      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
-    },
-    "refreshDate": {
-      "type": ["string", "null"],
-      "format": "date"
-    }
+    "last_research_refresh_date": { "type": "string" },
+    "last_content_history_refresh_date": { "type": "string" }
   }
 }

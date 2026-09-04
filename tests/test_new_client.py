@@ -20,16 +20,20 @@ class CreateWorkspaceTests(unittest.TestCase):
                 "example-client", "Example Client", Path(directory)
             )
             manifest = (workspace / "content-system.yaml").read_text(encoding="utf-8")
-            self.assertIn('identifier: "example-client"', manifest)
-            self.assertIn('display_name: "Example Client"', manifest)
+            self.assertIn('client_id: "example-client"', manifest)
+            self.assertIn('client_name: "Example Client"', manifest)
             self.assertNotIn("<client-identifier>", manifest)
             for relative in (
                 "content-context.md",
                 "research/demand-map.csv",
                 "research/trend-library.json",
+                "research/hook-library.json",
+                "research/research-log.json",
                 "sources/transcript-index.json",
                 "history/content-history.csv",
                 "approvals/approval-record.md",
+                "strategy/client-foundation.json",
+                "strategy/topic-bank.json",
             ):
                 self.assertTrue((workspace / relative).exists(), relative)
 
@@ -62,11 +66,11 @@ class CreateWorkspaceTests(unittest.TestCase):
             second = create_workspace("client-two", "Client Two", Path(directory))
             self.assertNotEqual(first, second)
             self.assertIn(
-                'identifier: "client-one"',
+                'client_id: "client-one"',
                 (first / "content-system.yaml").read_text(encoding="utf-8"),
             )
             self.assertIn(
-                'identifier: "client-two"',
+                'client_id: "client-two"',
                 (second / "content-system.yaml").read_text(encoding="utf-8"),
             )
 

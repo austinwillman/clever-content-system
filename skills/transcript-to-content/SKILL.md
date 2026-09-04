@@ -13,7 +13,7 @@ Require an explicit client workspace manifest path from the caller. There is no 
 
 If no manifest path is supplied, stop and ask which client workspace to use. Do not infer the client from the request topic, the transcript contents, the most recently used workspace, or the current working directory. Selecting the wrong workspace produces one client's strategy inside another client's batch, so an unresolved client is a hard stop rather than a guess.
 
-Before mining, confirm that `client.identifier` in the resolved manifest matches the client the caller named. Every candidate you emit carries that identifier in its `client_id` field, and a batch that mixes identifiers fails validation.
+Before mining, confirm that `client_id` in the resolved manifest matches the client the caller named. Every topic you emit carries that same `client_id`, and a batch that mixes client identifiers fails validation.
 
 Load strategy and assets through the manifest. Never replace manifest asset paths with hardcoded paths for any particular client. The durable inputs are:
 
@@ -36,7 +36,7 @@ Every topic you propose is a content candidate governed by `schemas/content-cand
 
 The contract enforces four rules that this workflow already assumes:
 
-- `client_id` must equal `client.identifier` in the resolved manifest, and one batch may not mix clients.
+- `client_id` must equal the manifest `client_id`, and one batch may not mix clients.
 - Every candidate needs at least one source reference and at least one supporting evidence entry.
 - `approval.state` cannot be `approved` without an approver, a timestamp, and a workspace-relative approval record reference.
 - A candidate cannot reach `approved_for_recording` unless it holds real approval, and approval requires at least one evidence entry whose `validation_status` is not `unavailable`.
@@ -49,7 +49,7 @@ Follow these steps in order. A failed gate stops the affected candidate. Do not 
 
 ### 1. Resolve the client and one-time foundation state
 
-Load the client manifest from the explicit argument or the stated default. Resolve every declared asset relative to the manifest directory and keep every path inside that directory. Use the existing `loadClientConfig` and validation interfaces without changing their contract. State the resolved manifest path and `client_id` in the work log.
+Load the client manifest from the explicit argument. There is no default. Resolve every declared asset relative to the manifest directory and keep every path inside that directory. Use the existing `loadClientConfig` and validation interfaces without changing their contract. State the resolved manifest path and `client_id` in the work log.
 
 Client foundation intake happens once. If the approved foundation is missing, inspect the authorized workspace and connectors before asking questions. Extract answers with evidence references, identify conflicts and unresolved fields, and ask only for answers that cannot be found safely. Never infer access permission or search a connector outside the user's authorized workspace. The client must approve the completed foundation before the topic bank becomes the baseline.
 

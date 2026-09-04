@@ -158,6 +158,10 @@ Before calling the pipeline complete:
 - local validation and GitHub Actions both pass
 - installation and continuation steps are documented for Claude Code and Codex
 
+## Known duplication
+
+`scripts/validate_candidate.py` and `lib/topic.mjs` both express candidate rules. Node is the runtime and the enforcement point. The Python contract checker exists so the candidate schema is usable outside Node, but the two will drift unless step 4 consolidates them. Treat consolidation as part of approval orchestration rather than a separate cleanup.
+
 ## Highest-leverage next action
 
 Build step 4, approval orchestration. Steps 1 through 3 are in place, so the next failure mode is operational rather than structural: at three or more concurrent clients, approval state is the thing that becomes ambiguous first.

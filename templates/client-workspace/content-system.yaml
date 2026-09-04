@@ -1,67 +1,56 @@
-schema_version: "1.0"
-client:
-  identifier: "<client-identifier>"
-  display_name: "<client-display-name>"
-active_90_day_objective:
-  statement: "<measurable 90-day content objective>"
-  success_metric: "<primary metric>"
-  target_value: "<target value>"
-content_pillars:
-  - id: pillar-1
-    name: "<pillar one>"
-    purpose: "<what this pillar should accomplish>"
-  - id: pillar-2
-    name: "<pillar two>"
-    purpose: "<what this pillar should accomplish>"
-  - id: pillar-3
-    name: "<pillar three>"
-    purpose: "<what this pillar should accomplish>"
-  - id: pillar-4
-    name: "<pillar four>"
-    purpose: "<what this pillar should accomplish>"
-cadence:
-  cycle_days: 6
-  days:
-    - day: 1
-      focus: "<content focus>"
-    - day: 2
-      focus: "<content focus>"
-    - day: 3
-      focus: "<content focus>"
-    - day: 4
-      focus: "<content focus>"
-    - day: 5
-      focus: "<content focus>"
-    - day: 6
-      focus: "<content focus>"
-cta_ladder:
-  - stage: awareness
-    call_to_action: "<low-friction next step>"
-    destination: "<relative or approved destination>"
-  - stage: consideration
-    call_to_action: "<evaluation next step>"
-    destination: "<relative or approved destination>"
-  - stage: conversion
-    call_to_action: "<commitment next step>"
-    destination: "<relative or approved destination>"
-locations:
-  content_context: content-context.md
-  demand_map: research/demand-map.csv
-  trend_library: research/trend-library.json
-  transcript_index: sources/transcript-index.json
-  content_history: history/content-history.csv
+schema_version: 1
+client_id: "<client-identifier>"
+client_name: "<client-display-name>"
+initiative:
+  id: "<initiative-identifier>"
+  horizon_days: 90
+  objective: "<what this initiative should achieve within the horizon>"
+positioning: "<one sentence describing what the client does and for whom>"
+last_research_refresh_date: 1970-01-01
+last_content_history_refresh_date: 1970-01-01
+pillars:
+  - id: "<pillar-one-id>"
+    label: "<pillar one>"
+  - id: "<pillar-two-id>"
+    label: "<pillar two>"
+  - id: "<pillar-three-id>"
+    label: "<pillar three>"
+  - id: "<pillar-four-id>"
+    label: "<pillar four>"
+content_output:
+  allowed_formats: [video]
+  batch_size: 4
+cta_classes: [reach, relationship, capture, conversation, conversion]
+cta_destinations:
+  follow: { class: reach, available: false }
+  newsletter: { class: relationship, available: false }
+  lead_magnet: { class: capture, available: false }
+  direct_message: { class: conversation, available: false }
+  consultation: { class: conversion, available: false }
+fatigue:
+  topic_cooldown_days: 45
+  max_hook_uses_per_seven_posts: 2
+  hook_frequency_window_posts: 7
 approval_gate:
   required_before: production
   approved_by: "<role or person responsible for approval>"
   record_location: approvals/approval-record.md
-fatigue_rules:
-  lookback_days: 30
-  max_reuses_per_topic: 2
-  max_reuses_per_hook: 1
-  action_when_triggered: "<refresh angle, format, or source before reuse>"
-last_refresh_dates:
-  content_context: null
-  demand_map: null
-  trend_library: null
-  transcript_index: null
-  content_history: null
+sources:
+  approved_recording_ids: []
+assets:
+  context: content-context.md
+  client_foundation: strategy/client-foundation.json
+  topic_bank: strategy/topic-bank.json
+  demand_map: research/demand-map.csv
+  trend_library: research/trend-library.json
+  hook_library: research/hook-library.json
+  research_log: research/research-log.json
+  transcript_index: sources/transcript-index.json
+  content_history: history/content-history.csv
+research_sources:
+  manual_export:
+    status: export_required
+    modes: [foundation, batch_signal]
+    required: false
+    subscription: "<subscription or access required for this source>"
+    fallback: "<what to do when this source is unavailable>"

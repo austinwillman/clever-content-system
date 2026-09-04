@@ -8,60 +8,19 @@ from pathlib import Path
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 VALIDATOR = REPOSITORY_ROOT / "scripts" / "validate_repo.py"
 
-VALID_MANIFEST = """schema_version: "1.0"
-client:
-  identifier: "<client-identifier>"
-  display_name: "<client-display-name>"
-active_90_day_objective:
-  statement: "<objective>"
-  success_metric: "<metric>"
-  target_value: "<target>"
-content_pillars:
-  - id: pillar-1
-    name: "<pillar one>"
-    purpose: "<purpose>"
-  - id: pillar-2
-    name: "<pillar two>"
-    purpose: "<purpose>"
-  - id: pillar-3
-    name: "<pillar three>"
-    purpose: "<purpose>"
-  - id: pillar-4
-    name: "<pillar four>"
-    purpose: "<purpose>"
-cadence:
-  cycle_days: 6
-  days:
-    - day: 1
-      focus: "<focus>"
-    - day: 2
-      focus: "<focus>"
-    - day: 3
-      focus: "<focus>"
-    - day: 4
-      focus: "<focus>"
-    - day: 5
-      focus: "<focus>"
-    - day: 6
-      focus: "<focus>"
-cta_ladder:
-  - stage: awareness
-    call_to_action: "<action>"
-    destination: "<destination>"
-locations:
-  content_context: content-context.md
-  demand_map: research/demand-map.csv
-  trend_library: research/trend-library.json
-  transcript_index: sources/transcript-index.json
-  content_history: history/content-history.csv
+VALID_MANIFEST = """schema_version: 1
+client_id: "<client-identifier>"
+client_name: "<client-display-name>"
 approval_gate:
   required_before: production
   approved_by: "<approver>"
   record_location: approvals/approval-record.md
-fatigue_rules:
-  lookback_days: 30
-last_refresh_dates:
-  content_context: null
+assets:
+  context: content-context.md
+  demand_map: research/demand-map.csv
+  trend_library: research/trend-library.json
+  transcript_index: sources/transcript-index.json
+  content_history: history/content-history.csv
 """
 
 REQUIRED_REPOSITORY_FILES = {
@@ -211,6 +170,42 @@ class ValidateRepositoryTests(unittest.TestCase):
         result = self.run_validator()
         self.assertNotEqual(0, result.returncode, result.stdout + result.stderr)
         self.assertIn(expected_message, result.stdout + result.stderr)
+
+    def test_manifest_template_absolute_asset_path_fails(self) -> None:
+        self.fixture.write(
+            "templates/client-workspace/content-system.yaml",
+            VALID_MANIFEST.replace(
+                "  context: content-context.md",
+                "  context: /etc/content-context.md",
+            ),
+        )
+        self.fixture.track_all()
+        self.assert_invalid("manifest template path context must be workspace-relative")
+
+    def test_manifest_template_escaping_asset_path_fails(self) -> None:
+        self.fixture.write(
+            "templates/client-workspace/content-system.yaml",
+            VALID_MANIFEST.replace(
+                "  context: content-context.md",
+                "  context: ../other-client/content-context.md",
+            ),
+        )
+        self.fixture.track_all()
+        self.assert_invalid("manifest template path context must not escape the workspace")
+
+    def test_manifest_template_missing_asset_file_fails(self) -> None:
+        self.fixture.write(
+            "templates/client-workspace/content-system.yaml",
+            VALID_MANIFEST.replace(
+                "  context: content-context.md",
+                "  context: research/not-created.md",
+            ),
+        )
+        self.fixture.track_all()
+        self.assert_invalid("manifest template path context does not exist in the template")
+
+    def test_valid_manifest_template_paths_pass(self) -> None:
+        self.assert_valid()
 
     def test_valid_repository_passes(self) -> None:
         self.assert_valid()
@@ -406,7 +401,7 @@ class ValidateRepositoryTests(unittest.TestCase):
                 self.fixture.write(relative_path, '[{"placeholder": true}]\n')
                 self.fixture.track_all()
 
-                self.assert_invalid("JSON template must be an empty array")
+                self.assert_invalid("JSON template must be an empty array or object")
 
                 self.fixture.write(relative_path, "[]\n")
                 self.fixture.track_all()
@@ -437,138 +432,6 @@ class ValidateRepositoryTests(unittest.TestCase):
 
                 self.fixture.write(relative_path, REQUIRED_REPOSITORY_FILES[relative_path])
                 self.fixture.track_all()
-
-    def test_valid_manifest_contract_passes(self) -> None:
-        self.assert_valid()
-
-    def test_manifest_missing_approval_path_fails(self) -> None:
-        self.assert_valid()
-        manifest = VALID_MANIFEST.replace(
-            "  record_location: approvals/approval-record.md\n", ""
-        )
-        self.fixture.write("templates/client-workspace/content-system.yaml", manifest)
-        self.fixture.track_all()
-
-        self.assert_invalid("manifest approval_gate is missing record_location")
-
-    def test_manifest_escaping_path_fails(self) -> None:
-        self.assert_valid()
-        manifest = VALID_MANIFEST.replace(
-            "approvals/approval-record.md", "../approvals/approval-record.md"
-        )
-        self.fixture.write("templates/client-workspace/content-system.yaml", manifest)
-        self.fixture.track_all()
-
-        self.assert_invalid("manifest path is not workspace-relative")
-
-    def test_manifest_missing_referenced_file_fails(self) -> None:
-        self.assert_valid()
-        (self.root / "templates/client-workspace/content-context.md").unlink()
-        self.fixture.track_all()
-
-        self.assert_invalid("manifest referenced file is missing")
-
-    def test_manifest_wrong_pillar_and_day_counts_fail(self) -> None:
-        cases = {
-            "pillars": (
-                "  - id: pillar-4\n"
-                "    name: \"<pillar four>\"\n"
-                "    purpose: \"<purpose>\"\n",
-                "manifest must define exactly four content pillars",
-            ),
-            "days": (
-                "    - day: 6\n      focus: \"<focus>\"\n",
-                "manifest cadence days must be exactly 1 through 6",
-            ),
-        }
-        for label, (removed_text, expected_message) in cases.items():
-            with self.subTest(label=label):
-                self.fixture.write(
-                    "templates/client-workspace/content-system.yaml",
-                    VALID_MANIFEST.replace(removed_text, ""),
-                )
-                self.fixture.track_all()
-
-                self.assert_invalid(expected_message)
-
-    def test_manifest_fixed_values_and_required_fields_fail(self) -> None:
-        cases = {
-            "schema": (
-                'schema_version: "1.0"',
-                'schema_version: "2.0"',
-                "manifest schema_version must be 1.0",
-            ),
-            "cycle": (
-                "  cycle_days: 6",
-                "  cycle_days: 7",
-                "manifest cadence cycle_days must be 6",
-            ),
-            "day_values": (
-                "    - day: 6",
-                "    - day: 5",
-                "manifest cadence days must be exactly 1 through 6",
-            ),
-            "location": (
-                "  demand_map: research/demand-map.csv\n",
-                "",
-                "manifest locations is missing demand_map",
-            ),
-            "required_before": (
-                "  required_before: production\n",
-                "",
-                "manifest approval_gate is missing required_before",
-            ),
-            "approved_by": (
-                '  approved_by: "<approver>"\n',
-                "",
-                "manifest approval_gate is missing approved_by",
-            ),
-            "top_level": (
-                "fatigue_rules:\n",
-                "",
-                "manifest is missing top-level section: fatigue_rules",
-            ),
-        }
-        for label, (old, new, expected_message) in cases.items():
-            with self.subTest(label=label):
-                self.fixture.write(
-                    "templates/client-workspace/content-system.yaml",
-                    VALID_MANIFEST.replace(old, new),
-                )
-                self.fixture.track_all()
-
-                self.assert_invalid(expected_message)
-
-    def test_manifest_required_before_empty_values_fail(self) -> None:
-        invalid_values = ("", "null", "~", '""', "''")
-        for value in invalid_values:
-            with self.subTest(value=value):
-                manifest = VALID_MANIFEST.replace(
-                    "  required_before: production",
-                    f"  required_before: {value}",
-                )
-                self.fixture.write(
-                    "templates/client-workspace/content-system.yaml", manifest
-                )
-                self.fixture.track_all()
-
-                self.assert_invalid(
-                    "manifest approval_gate required_before is invalid"
-                )
-
-    def test_manifest_required_before_enum_values_pass(self) -> None:
-        for value in ("planning", "production", "distribution"):
-            with self.subTest(value=value):
-                manifest = VALID_MANIFEST.replace(
-                    "  required_before: production",
-                    f"  required_before: {value}",
-                )
-                self.fixture.write(
-                    "templates/client-workspace/content-system.yaml", manifest
-                )
-                self.fixture.track_all()
-
-                self.assert_valid()
 
     def test_staged_non_executable_mode_hidden_by_worktree_mode_fails(self) -> None:
         self.assert_valid()

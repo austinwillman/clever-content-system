@@ -37,7 +37,9 @@ Required decisions:
 - four content pillars, each with a stated purpose
 - the cadence cycle and the focus of each day
 - the CTA ladder, its destinations, and whether each destination is actually live
-- the approval gate: who approves, and where the record is written
+- the approval gate: `required_before`, who approves, and where the record is written
+- `sources.approved_recording_ids`, the exact recordings this workspace expects
+- `research_sources`, with an honest status for each: connected, not_connected, export_required, optional, or unavailable
 - fatigue rules: lookback window and reuse limits
 
 An unavailable CTA destination is recorded as unavailable. Do not point a call to action at a page that does not exist yet.
@@ -63,8 +65,10 @@ Run the `transcript-to-content` skill with an explicit manifest path. It returns
 Validate before the board goes to the client:
 
 ```sh
-python3 scripts/validate_candidate.py path/to/candidates.json --client-id example-client
+npm run validate:client -- ~/clients/example-client/content-system.yaml
 ```
+
+That checks the manifest, resolves every declared asset, and confirms the transcript index matches the workspace's declared `sources.approved_recording_ids`.
 
 Produces: the approval board. Approval of a topic authorizes Recording Cards. It does not authorize recording, editing, rendering, scheduling, publishing, or any external write.
 

@@ -13,12 +13,25 @@ This repository contains the reusable operating system:
 
 It does not contain client transcripts, research, content history, strategy, credentials, source media, logos, or identifying details. Those materials belong in a separate private client workspace.
 
+## Running it
+
+The engine runtime is Node. The Python scripts are the repository privacy boundary and the portable contract checker.
+
+```sh
+npm install
+npm run check                       # Node tests, Python tests, repository validator
+npm run validate:client -- path/to/client/content-system.yaml
+npm run skills:install              # install the pipeline skills for a local agent
+```
+
 ## What ships today
 
 - `schemas/content-system.schema.json` defines the client workspace manifest.
 - `schemas/content-candidate.schema.json` defines the content candidate contract that every skill in the pipeline reads and writes.
 - `scripts/new_client.py` scaffolds a private client workspace and refuses to create one inside this repository.
-- `scripts/validate_candidate.py` enforces the candidate contract, including approval evidence and client isolation.
+- `lib/` is the engine runtime: manifest loading and validation, topic and batch validation, fatigue rules, and CSV parsing.
+- `scripts/validate-client.mjs` validates a complete client asset package before mining.
+- `scripts/validate_candidate.py` checks the portable candidate contract outside the Node runtime.
 - `skills/transcript-to-content` turns supplied transcript material into ranked, source-grounded candidates and post-approval recording briefs.
 - `skills/trend-to-fit` decides whether a supplied trend signal fits the client before it becomes a candidate.
 - `skills/brand-thumbnail` produces a thumbnail from a client-owned brand profile, protecting exact copy and official logos through deterministic compositing.
@@ -31,8 +44,9 @@ The engine serves many clients at once only because these rules hold:
 
 1. One private repository per client. A workspace never shares a repository with another client or with the engine.
 2. Skills take an explicit workspace manifest path. There is no default client, and an ambiguous workspace is a hard stop.
-3. A candidate carries its `client_id`, and a batch that mixes clients fails validation.
-4. Approval requires an approver, a timestamp, an approval record, and at least one evidence entry that is not `unavailable`.
+3. Every topic carries its `client_id`, and `validateWeeklyBatch` rejects a batch that mixes clients or omits one.
+4. The manifest declares an `approval_gate` naming who approves and where the record lives.
+5. The engine holds no client-specific data. A workspace declares its own approved recordings in `sources.approved_recording_ids`.
 
 ## Pipeline
 

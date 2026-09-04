@@ -9,9 +9,13 @@ This repository is the reusable public engine for a client content system. It is
 3. Run the baseline checks before changing behavior:
 
 ```sh
-python3 -m unittest discover -s tests -v
+npm install
+npm test
+python3 -m unittest discover -s tests
 python3 scripts/validate_repo.py
 ```
+
+`npm run check` runs all three.
 
 4. Inspect the current pull request and recent commits instead of relying on chat history.
 
@@ -26,7 +30,8 @@ The reusable engine must not depend on a particular person, company, industry, g
 ## Architecture rules
 
 - `templates/client-workspace/` defines the empty private-workspace starting point.
-- `schemas/` defines portable contracts.
+- `lib/` is the engine runtime and owns manifest, topic, batch, and fatigue validation.
+- `schemas/` documents those contracts portably. `scripts/validate_repo.py` owns only the repository privacy boundary, not manifest semantics.
 - `skills/` contains installable, white-labeled capabilities.
 - `scripts/validate_repo.py` validates the exact Git index state that would be committed.
 - Research and source truth stay private. Public skills receive only the active workspace context supplied at runtime.
@@ -84,6 +89,7 @@ These hold across every change. Breaking one is a client-confidentiality inciden
 - A candidate carries `client_id`, and a batch may not mix clients.
 - Approval requires an approver, a timestamp, a workspace-relative approval record, and at least one supporting evidence entry whose `validation_status` is not `unavailable`.
 - Client workspaces live in their own private repositories, never in this one.
+- The engine contains no client-specific values. A client-specific list belongs in that client's manifest, never in `lib/` or `scripts/`.
 
 ## Definition of done
 

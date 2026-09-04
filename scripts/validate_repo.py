@@ -10,7 +10,7 @@ import json
 import re
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import NamedTuple
 
 
@@ -96,31 +96,15 @@ EMPTY_JSON_TEMPLATES = frozenset(
     (
         "templates/client-workspace/research/trend-library.json",
         "templates/client-workspace/sources/transcript-index.json",
+        "templates/client-workspace/research/hook-library.json",
+        "templates/client-workspace/research/research-log.json",
+        "templates/client-workspace/strategy/client-foundation.json",
+        "templates/client-workspace/strategy/topic-bank.json",
     )
 )
 
 MANIFEST_PATH = "templates/client-workspace/content-system.yaml"
 WORKSPACE_TEMPLATE_PREFIX = "templates/client-workspace/"
-MANIFEST_TOP_LEVEL_SECTIONS = (
-    "schema_version",
-    "client",
-    "active_90_day_objective",
-    "content_pillars",
-    "cadence",
-    "cta_ladder",
-    "locations",
-    "approval_gate",
-    "fatigue_rules",
-    "last_refresh_dates",
-)
-MANIFEST_LOCATION_KEYS = (
-    "content_context",
-    "demand_map",
-    "trend_library",
-    "transcript_index",
-    "content_history",
-)
-
 ALLOWED_IDENTITY_TEXT = {
     "LICENSE": (" ".join((PERSON_GIVEN_NAME.title(), PERSON_FAMILY_NAME.title())),),
     "SECURITY.md": (
@@ -136,11 +120,6 @@ class IndexEntry(NamedTuple):
     object_id: str
     path: str
     data: bytes
-
-
-class ManifestSection(NamedTuple):
-    value: str
-    body: list[str]
 
 
 def indexed_files(root: Path) -> tuple[dict[str, IndexEntry], list[str]]:
@@ -286,8 +265,10 @@ def check_json_files(texts: dict[str, str]) -> list[str]:
         except json.JSONDecodeError as exc:
             errors.append(f"invalid JSON in {relative_path}: {exc}")
             continue
-        if relative_path in EMPTY_JSON_TEMPLATES and value != []:
-            errors.append(f"JSON template must be an empty array: {relative_path}")
+        if relative_path in EMPTY_JSON_TEMPLATES and value not in ([], {}):
+            errors.append(
+                f"JSON template must be an empty array or object: {relative_path}"
+            )
     return errors
 
 
@@ -395,153 +376,29 @@ def check_skill_frontmatter(texts: dict[str, str]) -> list[str]:
     return errors
 
 
-def narrow_scalar_text(value: str | None) -> str | None:
-    if not frontmatter_value_present(value):
-        return None
-    assert value is not None
-    scalar = strip_yaml_comment(value).strip()
-    if scalar[0] in ("'", '"'):
-        return scalar[1:-1].strip()
-    return scalar
+def check_workspace_template_paths(texts: dict[str, str]) -> list[str]:
+    """Workspace template asset paths must stay inside the workspace.
 
+    Manifest semantics belong to the engine validator (`scripts/validate-client.mjs`).
+    This repository validator keeps only the privacy-relevant question: can a
+    template path reach outside the client workspace it describes.
+    """
 
-def parse_manifest_sections(
-    text: str,
-) -> tuple[dict[str, ManifestSection], list[str]]:
-    sections: dict[str, ManifestSection] = {}
     errors: list[str] = []
-    current_name: str | None = None
-    for line_number, line in enumerate(text.splitlines(), start=1):
-        if not line.strip() or line.lstrip().startswith("#"):
+    manifest_text = texts.get(MANIFEST_PATH)
+    if manifest_text is None:
+        return errors
+
+    for match in re.finditer(r"(?m)^\s{2,}([a-z_]+):\s*([^\s#\[{][^\n#]*)$", manifest_text):
+        key, raw_value = match.group(1), match.group(2).strip().strip('"\'')
+        if "/" not in raw_value and not raw_value.endswith((".md", ".csv", ".json")):
             continue
-        if line[:1].isspace():
-            if current_name is None:
-                errors.append(
-                    f"manifest has indented content before a section on line {line_number}"
-                )
-            else:
-                sections[current_name].body.append(line)
-            continue
-        match = re.fullmatch(r"([a-z][a-z0-9_]*):[ \t]*(.*)", line)
-        if match is None:
-            errors.append(f"manifest has unsupported syntax on line {line_number}")
-            current_name = None
-            continue
-        name, value = match.groups()
-        if name in sections:
-            errors.append(f"manifest has duplicate top-level section: {name}")
-        sections[name] = ManifestSection(value, [])
-        current_name = name
-    return sections, errors
-
-
-def manifest_direct_mapping(section: ManifestSection) -> dict[str, str]:
-    values: dict[str, str] = {}
-    for line in section.body:
-        match = re.fullmatch(r"  ([a-z][a-z0-9_]*):[ \t]*(.*)", line)
-        if match is not None:
-            key, value = match.groups()
-            values[key] = value
-    return values
-
-
-def manifest_reference_error(
-    label: str,
-    raw_value: str,
-    index: dict[str, IndexEntry],
-) -> str | None:
-    value = narrow_scalar_text(raw_value)
-    if value is None:
-        return f"manifest path is not workspace-relative: {label}"
-    components = value.split("/")
-    has_windows_drive = re.match(r"^[A-Za-z]:", value) is not None
-    if (
-        value.startswith("/")
-        or value.startswith("\\")
-        or "\\" in value
-        or has_windows_drive
-        or any(component in ("", ".", "..") for component in components)
-    ):
-        return f"manifest path is not workspace-relative: {label}"
-    indexed_path = WORKSPACE_TEMPLATE_PREFIX + value
-    if indexed_path not in index:
-        return f"manifest referenced file is missing: {label} -> {indexed_path}"
-    return None
-
-
-def check_manifest_template(
-    index: dict[str, IndexEntry], texts: dict[str, str]
-) -> list[str]:
-    """Check the fixed repository template shape without parsing general YAML."""
-    text = texts.get(MANIFEST_PATH)
-    if text is None:
-        return []
-    sections, errors = parse_manifest_sections(text)
-    for section_name in MANIFEST_TOP_LEVEL_SECTIONS:
-        if section_name not in sections:
-            errors.append(f"manifest is missing top-level section: {section_name}")
-
-    schema_section = sections.get("schema_version")
-    if schema_section is not None:
-        schema_version = narrow_scalar_text(schema_section.value)
-        if schema_version != "1.0":
-            errors.append("manifest schema_version must be 1.0")
-
-    pillars_section = sections.get("content_pillars")
-    if pillars_section is not None:
-        pillar_count = sum(line.startswith("  - ") for line in pillars_section.body)
-        if pillar_count != 4:
-            errors.append("manifest must define exactly four content pillars")
-
-    cadence_section = sections.get("cadence")
-    if cadence_section is not None:
-        cadence_values = manifest_direct_mapping(cadence_section)
-        if narrow_scalar_text(cadence_values.get("cycle_days")) != "6":
-            errors.append("manifest cadence cycle_days must be 6")
-        cadence_days: list[int] = []
-        for line in cadence_section.body:
-            match = re.fullmatch(r"    - day:[ \t]*([0-9]+)", line)
-            if match is not None:
-                cadence_days.append(int(match.group(1)))
-        if cadence_days != [1, 2, 3, 4, 5, 6]:
-            errors.append("manifest cadence days must be exactly 1 through 6")
-
-    references: list[tuple[str, str]] = []
-    locations_section = sections.get("locations")
-    if locations_section is not None:
-        location_values = manifest_direct_mapping(locations_section)
-        for key in MANIFEST_LOCATION_KEYS:
-            if key not in location_values:
-                errors.append(f"manifest locations is missing {key}")
-            else:
-                references.append((f"locations.{key}", location_values[key]))
-
-    approval_section = sections.get("approval_gate")
-    if approval_section is not None:
-        approval_values = manifest_direct_mapping(approval_section)
-        for key in ("required_before", "approved_by", "record_location"):
-            if key not in approval_values:
-                errors.append(f"manifest approval_gate is missing {key}")
-        required_before = narrow_scalar_text(approval_values.get("required_before"))
-        if "required_before" in approval_values and required_before not in {
-            "planning",
-            "production",
-            "distribution",
-        }:
-            errors.append("manifest approval_gate required_before is invalid")
-        if "approved_by" in approval_values and narrow_scalar_text(
-            approval_values["approved_by"]
-        ) is None:
-            errors.append("manifest approval_gate approved_by must be non-empty")
-        if "record_location" in approval_values:
-            references.append(
-                ("approval_gate.record_location", approval_values["record_location"])
-            )
-
-    for label, raw_value in references:
-        error = manifest_reference_error(label, raw_value, index)
-        if error is not None:
-            errors.append(error)
+        if raw_value.startswith(("/", "~")) or raw_value.startswith("\\"):
+            errors.append(f"manifest template path {key} must be workspace-relative")
+        elif ".." in PurePosixPath(raw_value).parts:
+            errors.append(f"manifest template path {key} must not escape the workspace")
+        elif f"{WORKSPACE_TEMPLATE_PREFIX}{raw_value}" not in texts:
+            errors.append(f"manifest template path {key} does not exist in the template")
     return errors
 
 
@@ -557,7 +414,7 @@ def validate_repository(root: Path) -> list[str]:
     errors.extend(check_csv_templates(texts))
     errors.extend(check_shell_scripts(index))
     errors.extend(check_skill_frontmatter(texts))
-    errors.extend(check_manifest_template(index, texts))
+    errors.extend(check_workspace_template_paths(texts))
     return errors
 
 
