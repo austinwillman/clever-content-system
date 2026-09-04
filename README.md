@@ -34,6 +34,7 @@ npm run skills:install              # install the pipeline skills for a local ag
 - `scripts/validate_candidate.py` checks the portable candidate contract outside the Node runtime.
 - `skills/transcript-to-content` turns supplied transcript material into ranked, source-grounded candidates and post-approval recording briefs.
 - `skills/trend-to-fit` decides whether a supplied trend signal fits the client before it becomes a candidate.
+- `skills/kallaway-hooks` writes or critiques source-faithful video openings using adapted Kallaway mechanics and owner-recognition gates.
 - `skills/brand-thumbnail` produces a thumbnail from a client-owned brand profile, protecting exact copy and official logos through deterministic compositing.
 
 See [docs/client-onboarding.md](docs/client-onboarding.md) for the runbook that takes one client from signed to first approval board.
