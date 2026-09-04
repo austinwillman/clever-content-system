@@ -70,6 +70,15 @@ REQUIRED_SKILL_FILES = {
     "skills/brand-thumbnail/references/output-contract.md": "# Output contract\n",
     "skills/brand-thumbnail/scripts/analyze-video.sh": "#!/bin/sh\nexit 0\n",
     "skills/brand-thumbnail/scripts/verify-image.sh": "#!/bin/sh\nexit 0\n",
+    "skills/kallaway-hooks/SKILL.md": (
+        "---\n"
+        "name: kallaway-hooks\n"
+        "description: Write or critique founder-led social video hooks.\n"
+        "---\n\n"
+        "# Fixture skill\n"
+    ),
+    "skills/kallaway-hooks/references/kallaway-frameworks.md": "# Frameworks\n",
+    "skills/kallaway-hooks/references/provenance.md": "# Provenance\n",
     "skills/transcript-to-content/SKILL.md": (
         "---\n"
         "name: transcript-to-content\n"
@@ -224,6 +233,15 @@ class ValidateRepositoryTests(unittest.TestCase):
 
         self.assert_invalid(
             "missing required skill file: skills/brand-thumbnail/references/layouts.md"
+        )
+
+    def test_missing_kallaway_hook_skill_fails(self) -> None:
+        self.assert_valid()
+        (self.root / "skills/kallaway-hooks/SKILL.md").unlink()
+        self.fixture.track_all()
+
+        self.assert_invalid(
+            "missing required skill file: skills/kallaway-hooks/SKILL.md"
         )
 
     def test_force_added_clients_path_fails(self) -> None:

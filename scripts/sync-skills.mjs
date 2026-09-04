@@ -4,6 +4,7 @@ import { dirname, isAbsolute, join, parse, relative, resolve, sep } from "node:p
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const SKILLS = [
+  { source: "kallaway-hooks", installed: "kallaway-hooks" },
   { source: "transcript-to-content", installed: "transcript-to-content" },
   { source: "trend-to-fit", installed: "trend-to-fit" },
 ];
