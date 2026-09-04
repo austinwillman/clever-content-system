@@ -77,6 +77,7 @@ REQUIRED_REPOSITORY_FILES = {
     "SECURITY.md": "# Security\n",
     "docs/architecture.md": "# Architecture\n",
     "schemas/content-system.schema.json": "{}\n",
+    "schemas/content-candidate.schema.json": "{}\n",
     "templates/client-workspace/content-system.yaml": VALID_MANIFEST,
     "templates/client-workspace/content-context.md": "# Content context\n",
     "templates/client-workspace/research/demand-map.csv": "topic,intent\n",
@@ -86,7 +87,14 @@ REQUIRED_REPOSITORY_FILES = {
     "templates/client-workspace/approvals/approval-record.md": "# Approval record\n",
     ".github/workflows/validate.yml": "name: Validate\n",
     "scripts/validate_repo.py": "# Fixture validator path\n",
+    "scripts/validate_candidate.py": "# Fixture candidate validator path\n",
+    "scripts/jsonschema_min.py": "# Fixture schema helper path\n",
+    "scripts/new_client.py": "# Fixture workspace scaffold path\n",
+    "docs/client-onboarding.md": "# Onboarding\n",
     "tests/test_validate_repo.py": "# Fixture test path\n",
+    "tests/test_validate_candidate.py": "# Fixture candidate test path\n",
+    "tests/test_new_client.py": "# Fixture workspace test path\n",
+    "tests/test_skill_contracts.py": "# Fixture skill contract test path\n",
 }
 
 REQUIRED_SKILL_FILES = {
@@ -103,6 +111,26 @@ REQUIRED_SKILL_FILES = {
     "skills/brand-thumbnail/references/output-contract.md": "# Output contract\n",
     "skills/brand-thumbnail/scripts/analyze-video.sh": "#!/bin/sh\nexit 0\n",
     "skills/brand-thumbnail/scripts/verify-image.sh": "#!/bin/sh\nexit 0\n",
+    "skills/transcript-to-content/SKILL.md": (
+        "---\n"
+        "name: transcript-to-content\n"
+        "description: Turn supplied source material into content candidates.\n"
+        "---\n\n"
+        "# Fixture skill\n"
+    ),
+    "skills/transcript-to-content/references/client-foundation-and-research.md": "# Foundation\n",
+    "skills/transcript-to-content/references/live-hooks-and-production.md": "# Live hooks\n",
+    "skills/transcript-to-content/references/output-contract.md": "# Output contract\n",
+    "skills/transcript-to-content/references/owner-recognition-filter.md": "# Recognition\n",
+    "skills/transcript-to-content/references/scoring-and-routing.md": "# Scoring\n",
+    "skills/trend-to-fit/SKILL.md": (
+        "---\n"
+        "name: trend-to-fit\n"
+        "description: Evaluate whether a supplied trend signal fits the client.\n"
+        "---\n\n"
+        "# Fixture skill\n"
+    ),
+    "skills/trend-to-fit/references/trend-score.md": "# Trend score\n",
 }
 
 
@@ -640,7 +668,7 @@ class ValidateRepositoryTests(unittest.TestCase):
             + "aust"
             + "in"
             + "will"
-            + "man/client-content-system/security/advisories/new\n",
+            + "man/clever-content-system/security/advisories/new\n",
         )
         self.fixture.track_all()
 

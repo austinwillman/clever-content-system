@@ -22,8 +22,16 @@ REQUIRED_REPOSITORY_FILES = (
     "SECURITY.md",
     "docs/architecture.md",
     "schemas/content-system.schema.json",
+    "schemas/content-candidate.schema.json",
     "scripts/validate_repo.py",
+    "scripts/validate_candidate.py",
+    "scripts/jsonschema_min.py",
+    "scripts/new_client.py",
+    "docs/client-onboarding.md",
     "tests/test_validate_repo.py",
+    "tests/test_validate_candidate.py",
+    "tests/test_new_client.py",
+    "tests/test_skill_contracts.py",
     "templates/client-workspace/content-system.yaml",
     "templates/client-workspace/content-context.md",
     "templates/client-workspace/research/demand-map.csv",
@@ -41,6 +49,14 @@ REQUIRED_SKILL_FILES = (
     "skills/brand-thumbnail/references/output-contract.md",
     "skills/brand-thumbnail/scripts/analyze-video.sh",
     "skills/brand-thumbnail/scripts/verify-image.sh",
+    "skills/transcript-to-content/SKILL.md",
+    "skills/transcript-to-content/references/client-foundation-and-research.md",
+    "skills/transcript-to-content/references/live-hooks-and-production.md",
+    "skills/transcript-to-content/references/output-contract.md",
+    "skills/transcript-to-content/references/owner-recognition-filter.md",
+    "skills/transcript-to-content/references/scoring-and-routing.md",
+    "skills/trend-to-fit/SKILL.md",
+    "skills/trend-to-fit/references/trend-score.md",
 )
 
 BLOCKED_TOP_LEVEL_PATHS = frozenset(("clients", "private", "secrets"))
@@ -110,7 +126,7 @@ ALLOWED_IDENTITY_TEXT = {
     "SECURITY.md": (
         "https://github.com/"
         + "".join((PERSON_GIVEN_NAME, PERSON_FAMILY_NAME))
-        + "/client-content-system/security/advisories/new",
+        + "/clever-content-system/security/advisories/new",
     ),
 }
 

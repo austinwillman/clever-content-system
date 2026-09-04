@@ -66,12 +66,24 @@ The completed foundation includes:
 
 - the public/private architecture and security boundary
 - the client workspace manifest schema and empty templates
-- the installable `brand-thumbnail` skill
+- the content candidate contract, its stdlib validator, and batch-level client isolation
+- the installable `brand-thumbnail`, `transcript-to-content`, and `trend-to-fit` skills
+- private client workspace scaffolding via `scripts/new_client.py`
+- the client onboarding runbook in `docs/client-onboarding.md`
 - staged-content privacy and contract validation
 - regression tests and GitHub Actions CI
 - GitHub private vulnerability reporting
 
-The remaining pipeline is intentionally not presented as implemented. Continue it in the order defined in `docs/roadmap.md`.
+Build steps 1 through 3 of `docs/roadmap.md` are implemented. Steps 4 through 6, approval orchestration, fatigue-aware routing, and the top-level pipeline command, are not. Do not present them as implemented.
+
+## Multi-client invariants
+
+These hold across every change. Breaking one is a client-confidentiality incident, not a bug.
+
+- A skill never resolves a client workspace on its own. There is no default client. `tests/test_skill_contracts.py` enforces this.
+- A candidate carries `client_id`, and a batch may not mix clients.
+- Approval requires an approver, a timestamp, a workspace-relative approval record, and at least one supporting evidence entry whose `validation_status` is not `unavailable`.
+- Client workspaces live in their own private repositories, never in this one.
 
 ## Definition of done
 

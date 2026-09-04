@@ -1,6 +1,6 @@
-# Client Content System
+# Clever Content System
 
-Client Content System is a reusable public engine for building a client-owned content operation. It provides schemas, empty workspace templates, validation, and an installable thumbnail skill. It is not a repository of client work.
+Clever Content System is a reusable public engine for building a client-owned content operation. It provides schemas, empty workspace templates, validation, workspace scaffolding, and installable skills that turn client source material into approved content candidates. It is not a repository of client work.
 
 ## Product boundary
 
@@ -13,13 +13,28 @@ This repository contains the reusable operating system:
 
 It does not contain client transcripts, research, content history, strategy, credentials, source media, logos, or identifying details. Those materials belong in a separate private client workspace.
 
-## First release
+## What ships today
 
-The first release supplies a white-labeled, installable thumbnail skill from `skills/brand-thumbnail`. The skill uses a client-owned `thumbnail-brand.md` file in the current workspace as its source of truth. It can inspect supplied media, protect exact copy and official logos through deterministic compositing, and verify the final image before handoff.
+- `schemas/content-system.schema.json` defines the client workspace manifest.
+- `schemas/content-candidate.schema.json` defines the content candidate contract that every skill in the pipeline reads and writes.
+- `scripts/new_client.py` scaffolds a private client workspace and refuses to create one inside this repository.
+- `scripts/validate_candidate.py` enforces the candidate contract, including approval evidence and client isolation.
+- `skills/transcript-to-content` turns supplied transcript material into ranked, source-grounded candidates and post-approval recording briefs.
+- `skills/trend-to-fit` decides whether a supplied trend signal fits the client before it becomes a candidate.
+- `skills/brand-thumbnail` produces a thumbnail from a client-owned brand profile, protecting exact copy and official logos through deterministic compositing.
 
-## Planned pipeline
+See [docs/client-onboarding.md](docs/client-onboarding.md) for the runbook that takes one client from signed to first approval board.
 
-The public foundation is designed to support a repeatable pipeline:
+## Multi-client rules
+
+The engine serves many clients at once only because these rules hold:
+
+1. One private repository per client. A workspace never shares a repository with another client or with the engine.
+2. Skills take an explicit workspace manifest path. There is no default client, and an ambiguous workspace is a hard stop.
+3. A candidate carries its `client_id`, and a batch that mixes clients fails validation.
+4. Approval requires an approver, a timestamp, an approval record, and at least one evidence entry that is not `unavailable`.
+
+## Pipeline
 
 1. Configure a client workspace from `templates/client-workspace`.
 2. Capture source and research locations in the workspace manifest.

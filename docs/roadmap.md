@@ -16,6 +16,10 @@ The repository currently provides:
 - a white-labeled thumbnail production skill
 - repository privacy and contract validation
 - automated tests and CI
+- the versioned content candidate contract and its validator (build step 1)
+- the `transcript-to-content` skill (build step 2)
+- the `trend-to-fit` skill (build step 3)
+- private client workspace scaffolding and the onboarding runbook
 
 Treat those components as established interfaces. Change them deliberately and update their tests and documentation together.
 
@@ -156,4 +160,4 @@ Before calling the pipeline complete:
 
 ## Highest-leverage next action
 
-Define and approve the content candidate schema. It is the shared interface that lets transcript research, trend evaluation, approval, production, and learning history connect without turning the pipeline into agent soup.
+Build step 4, approval orchestration. Steps 1 through 3 are in place, so the next failure mode is operational rather than structural: at three or more concurrent clients, approval state is the thing that becomes ambiguous first.

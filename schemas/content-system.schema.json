@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.invalid/client-content-system/schemas/content-system.schema.json",
-  "title": "Client Content System Manifest",
+  "$id": "https://example.invalid/clever-content-system/schemas/content-system.schema.json",
+  "title": "Clever Content System Manifest",
   "description": "Contract for a private client workspace manifest.",
   "type": "object",
   "additionalProperties": false,
