@@ -1,0 +1,38 @@
+{
+  "topic_id": "replace-me",
+  "source_recording_id": "replace-me",
+  "production_route": "talking_head",
+  "selected_hook": {
+    "text": "",
+    "take_id": "",
+    "timestamp_ms": 0,
+    "template_id": "",
+    "evidence_grade": "hypothesis",
+    "body_continuity": "pending"
+  },
+  "body_edit": {
+    "in_ms": 0,
+    "out_ms": 0,
+    "must_keep": [],
+    "removable_context": []
+  },
+  "creative_direction": "",
+  "b_roll_map": [],
+  "green_screen": {
+    "enabled": false,
+    "source_asset": "",
+    "source_url": "",
+    "rights_status": "pending",
+    "spoken_line": "",
+    "placement": "",
+    "fallback": "Talking head"
+  },
+  "caption_direction": "",
+  "on_screen_text": [],
+  "cta": {
+    "class": "",
+    "destination": ""
+  },
+  "claim_warnings": [],
+  "do_not_overproduce": []
+}

@@ -1,0 +1,24 @@
+{
+  "name": "clever-content-system",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Reusable engine for a client-owned content operation.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "test:python": "python3 -m unittest discover -s tests",
+    "validate:repo": "python3 scripts/validate_repo.py",
+    "validate:client": "node scripts/validate-client.mjs",
+    "validate:candidate": "python3 scripts/validate_candidate.py",
+    "skills:check": "node scripts/sync-skills.mjs --check",
+    "skills:install": "node scripts/sync-skills.mjs --install",
+    "check": "npm test && npm run test:python && npm run validate:repo"
+  },
+  "dependencies": {
+    "yaml": "^2.9.0"
+  }
+}

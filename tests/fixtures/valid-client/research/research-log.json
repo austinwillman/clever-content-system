@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "client_id": "fixture-client",
+  "foundation_validation": {
+    "status": "complete",
+    "completed_at": "2026-08-19",
+    "source_ids": ["fixture-evidence-001"],
+    "limitations": []
+  },
+  "batch_signal_scans": []
+}

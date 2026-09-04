@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "client_id": "fixture-client",
+  "templates": [
+    {
+      "hook_id": "fixture-hook-001",
+      "structure": "If [recognizable symptom], the problem may be [reframe].",
+      "evidence_grade": "hypothesis",
+      "supported_topic_types": ["problem_reframe"],
+      "source_refs": []
+    }
+  ],
+  "observed_hooks": []
+}

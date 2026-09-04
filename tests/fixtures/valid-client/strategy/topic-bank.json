@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "client_id": "fixture-client",
+  "last_full_refresh_date": "2026-08-19",
+  "topics": [
+    {
+      "topic_id": "fixture-topic-001",
+      "status": "active",
+      "pillar": "get-free",
+      "owner_problem": "Owner dependency",
+      "buyer_language": ["Everything waits for me"],
+      "client_pov": "The handoff is the system",
+      "owner_outcome": "Fewer decisions wait on the owner",
+      "evidence_ids": ["fixture-evidence-001"],
+      "last_validated_at": "2026-08-19"
+    }
+  ]
+}
