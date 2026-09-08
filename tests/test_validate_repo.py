@@ -57,6 +57,9 @@ REQUIRED_REPOSITORY_FILES = {
 }
 
 REQUIRED_SKILL_FILES = {
+    "skills/social-post-copy/SKILL.md": "---\nname: social-post-copy\ndescription: Write source-grounded social posts.\n---\n# Fixture skill\n",
+    "skills/social-post-copy/references/editorial-review.md": "# Editorial review\n",
+    "skills/social-post-copy/agents/openai.yaml": "interface:\n  display_name: Fixture\n",
     "skills/brand-thumbnail/SKILL.md": (
         "---\n"
         "name: fixture-thumbnail\n"

@@ -14,7 +14,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILLS_DIR = REPO_ROOT / "skills"
 
-PIPELINE_SKILLS = ("transcript-to-content", "trend-to-fit")
+PIPELINE_SKILLS = ("transcript-to-content", "trend-to-fit", "social-post-copy")
 
 DEFAULT_WORKSPACE_PATTERNS = (
     re.compile(r"the\s+default\s+is\s+`[^`]*content-system\.yaml`", re.IGNORECASE),
