@@ -42,6 +42,9 @@ REQUIRED_REPOSITORY_FILES = (
 )
 
 REQUIRED_SKILL_FILES = (
+    "skills/social-post-copy/SKILL.md",
+    "skills/social-post-copy/references/editorial-review.md",
+    "skills/social-post-copy/agents/openai.yaml",
     "skills/brand-thumbnail/SKILL.md",
     "skills/brand-thumbnail/agents/openai.yaml",
     "skills/brand-thumbnail/references/brand-profile-template.md",

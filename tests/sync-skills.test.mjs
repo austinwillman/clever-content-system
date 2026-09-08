@@ -20,7 +20,8 @@ test("syncs known skill files to both roots without deleting unrelated files", a
 
   const result = await syncSkills({ codexRoot, claudeRoot, mode: "install" });
 
-  assert.deepEqual(result.skills.sort(), ["kallaway-hooks", "transcript-to-content", "trend-to-fit"]);
+  assert.deepEqual(result.skills.sort(), ["kallaway-hooks", "social-post-copy", "transcript-to-content", "trend-to-fit"]);
+  assert.equal(await readFile(join(codexRoot, "social-post-copy", "SKILL.md"), "utf8"), await readFile(join(claudeRoot, "social-post-copy", "SKILL.md"), "utf8"));
   assert.match(await readFile(join(codexRoot, "kallaway-hooks", "SKILL.md"), "utf8"), /name: kallaway-hooks/);
   assert.match(await readFile(join(codexRoot, "transcript-to-content", "SKILL.md"), "utf8"), /name: transcript-to-content/);
   assert.match(await readFile(join(claudeRoot, "trend-to-fit", "SKILL.md"), "utf8"), /name: trend-to-fit/);

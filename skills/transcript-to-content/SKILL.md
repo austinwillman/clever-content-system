@@ -30,6 +30,10 @@ Load strategy and assets through the manifest. Never replace manifest asset path
 
 Read [references/client-foundation-and-research.md](references/client-foundation-and-research.md) when creating or refreshing a client foundation, topic bank, Search Target, or connector plan. Read [references/owner-recognition-filter.md](references/owner-recognition-filter.md) before refining a candidate. Read [references/scoring-and-routing.md](references/scoring-and-routing.md) before scoring or routing it. Read [references/live-hooks-and-production.md](references/live-hooks-and-production.md) when generating same-session hook pickups, green-screen direction, B-roll notes, or an editor package. Read [references/output-contract.md](references/output-contract.md) before returning an approval board, Recording Card, or editor package.
 
+## Companion post handoff
+
+When the user requests complete social post copy for supplied or approved material, hand the explicitly resolved manifest, source spans, ownership notes, and client voice references to `social-post-copy`. Apply its whole-post review rather than treating a video hook or recording brief as finished post copy. A narrow authorized follow-up caption request does not restart topic mining or batch approval.
+
 ## Candidate contract
 
 Every topic you propose is a content candidate governed by `schemas/content-candidate.schema.json`. Validate a candidate with `scripts/validate_candidate.py` before it reaches an approval board, and validate the batch before it becomes Recording Cards.
