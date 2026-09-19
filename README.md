@@ -22,6 +22,8 @@ npm install
 npm run check                       # Node tests, Python tests, repository validator
 npm run validate:client -- path/to/client/content-system.yaml
 npm run skills:install              # install the pipeline skills for a local agent
+npm run eval:social-post-copy:dry   # inspect the skill A/B eval plan without model calls
+npm run eval:social-post-copy       # compare social copy with and without the skill
 ```
 
 ## What ships today
@@ -36,9 +38,11 @@ npm run skills:install              # install the pipeline skills for a local ag
 - `skills/trend-to-fit` decides whether a supplied trend signal fits the client before it becomes a candidate.
 - `skills/kallaway-hooks` writes or critiques source-faithful video openings using adapted Kallaway mechanics and owner-recognition gates.
 - `skills/social-post-copy` writes complete social posts in the active client's evidenced voice, with source, ownership, and editorial review gates.
+- `skills/intent-drift-audit` performs a read-only comparison between completed work and the user's latest intent, verification standard, and authorization boundary.
 - `skills/brand-thumbnail` produces a thumbnail from a client-owned brand profile, protecting exact copy and official logos through deterministic compositing.
 
 See [docs/client-onboarding.md](docs/client-onboarding.md) for the runbook that takes one client from signed to first approval board.
+See [docs/skill-evals.md](docs/skill-evals.md) for the A/B method, cost boundary, and rules for adding regression cases.
 
 ## Multi-client rules
 

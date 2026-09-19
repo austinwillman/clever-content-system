@@ -50,6 +50,8 @@ REQUIRED_REPOSITORY_FILES = {
     "scripts/jsonschema_min.py": "# Fixture schema helper path\n",
     "scripts/new_client.py": "# Fixture workspace scaffold path\n",
     "docs/client-onboarding.md": "# Onboarding\n",
+    "docs/skill-evals.md": "# Skill evaluation\n",
+    "docs/eval-baselines/social-post-copy-2026-09-18.md": "# Eval baseline\n",
     "tests/test_validate_repo.py": "# Fixture test path\n",
     "tests/test_validate_candidate.py": "# Fixture candidate test path\n",
     "tests/test_new_client.py": "# Fixture workspace test path\n",
@@ -57,6 +59,14 @@ REQUIRED_REPOSITORY_FILES = {
 }
 
 REQUIRED_SKILL_FILES = {
+    "skills/intent-drift-audit/SKILL.md": (
+        "---\n"
+        "name: intent-drift-audit\n"
+        "description: Audit completed work against the latest stated intent.\n"
+        "---\n\n"
+        "# Fixture skill\n"
+    ),
+    "skills/intent-drift-audit/agents/openai.yaml": "interface:\n  display_name: Fixture\n",
     "skills/social-post-copy/SKILL.md": "---\nname: social-post-copy\ndescription: Write source-grounded social posts.\n---\n# Fixture skill\n",
     "skills/social-post-copy/references/editorial-review.md": "# Editorial review\n",
     "skills/social-post-copy/agents/openai.yaml": "interface:\n  display_name: Fixture\n",
@@ -245,6 +255,15 @@ class ValidateRepositoryTests(unittest.TestCase):
 
         self.assert_invalid(
             "missing required skill file: skills/kallaway-hooks/SKILL.md"
+        )
+
+    def test_missing_intent_drift_audit_skill_fails(self) -> None:
+        self.assert_valid()
+        (self.root / "skills/intent-drift-audit/SKILL.md").unlink()
+        self.fixture.track_all()
+
+        self.assert_invalid(
+            "missing required skill file: skills/intent-drift-audit/SKILL.md"
         )
 
     def test_force_added_clients_path_fails(self) -> None:

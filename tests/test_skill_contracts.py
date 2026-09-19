@@ -15,6 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILLS_DIR = REPO_ROOT / "skills"
 
 PIPELINE_SKILLS = ("transcript-to-content", "trend-to-fit", "social-post-copy")
+ALL_SKILLS = PIPELINE_SKILLS + ("intent-drift-audit",)
 
 DEFAULT_WORKSPACE_PATTERNS = (
     re.compile(r"the\s+default\s+is\s+`[^`]*content-system\.yaml`", re.IGNORECASE),
@@ -35,7 +36,7 @@ def skill_documents(skill: str) -> list[Path]:
 
 class SkillFrontmatterTests(unittest.TestCase):
     def test_every_skill_declares_name_and_description(self) -> None:
-        for skill in PIPELINE_SKILLS:
+        for skill in ALL_SKILLS:
             with self.subTest(skill=skill):
                 text = (SKILLS_DIR / skill / "SKILL.md").read_text(encoding="utf-8")
                 self.assertTrue(text.startswith("---\n"), "missing frontmatter")
@@ -44,7 +45,7 @@ class SkillFrontmatterTests(unittest.TestCase):
                 self.assertRegex(frontmatter, r"(?m)^description:\s*\S+")
 
     def test_skill_name_matches_directory(self) -> None:
-        for skill in PIPELINE_SKILLS:
+        for skill in ALL_SKILLS:
             with self.subTest(skill=skill):
                 text = (SKILLS_DIR / skill / "SKILL.md").read_text(encoding="utf-8")
                 match = re.search(r"(?m)^name:\s*(\S+)", text)
@@ -54,7 +55,7 @@ class SkillFrontmatterTests(unittest.TestCase):
 
 class NoDefaultClientTests(unittest.TestCase):
     def test_no_skill_document_declares_a_default_workspace(self) -> None:
-        for skill in PIPELINE_SKILLS:
+        for skill in ALL_SKILLS:
             for document in skill_documents(skill):
                 text = document.read_text(encoding="utf-8")
                 for pattern in DEFAULT_WORKSPACE_PATTERNS:
@@ -77,7 +78,7 @@ class NoDefaultClientTests(unittest.TestCase):
 class SkillPortabilityTests(unittest.TestCase):
     def test_skills_carry_no_absolute_local_paths(self) -> None:
         pattern = re.compile(r"/Users/|/home/[a-z]|C:\\\\Users", re.IGNORECASE)
-        for skill in PIPELINE_SKILLS:
+        for skill in ALL_SKILLS:
             for document in skill_documents(skill):
                 with self.subTest(document=str(document)):
                     self.assertIsNone(
@@ -87,7 +88,7 @@ class SkillPortabilityTests(unittest.TestCase):
 
     def test_referenced_reference_files_exist(self) -> None:
         link_pattern = re.compile(r"\[[^\]]+\]\((references/[^)]+)\)")
-        for skill in PIPELINE_SKILLS:
+        for skill in ALL_SKILLS:
             root = SKILLS_DIR / skill
             text = (root / "SKILL.md").read_text(encoding="utf-8")
             for relative in link_pattern.findall(text):

@@ -4,6 +4,7 @@ import { dirname, isAbsolute, join, parse, relative, resolve, sep } from "node:p
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const SKILLS = [
+  { source: "intent-drift-audit", installed: "intent-drift-audit" },
   { source: "social-post-copy", installed: "social-post-copy" },
   { source: "kallaway-hooks", installed: "kallaway-hooks" },
   { source: "transcript-to-content", installed: "transcript-to-content" },
