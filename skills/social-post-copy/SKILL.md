@@ -60,6 +60,16 @@ Draft the whole argument before polishing the first line. Generate alternatives 
 
 Run two distinct passes: source/ownership first, then voice/argument. A compelling hook cannot compensate for failed source fidelity. A perfectly accurate summary can still fail voice.
 
+When the user rewrites a draft, treat the rewrite as direct voice and reasoning evidence. Compare more than vocabulary:
+
+- Which distinctions did they sharpen?
+- Which causal steps or decision thresholds did they add?
+- Which concrete fields, actions, examples, and handoffs replaced abstractions?
+- Where did they allow more connective explanation instead of further compression?
+- How did their headings, punch lines, humor, and CTA change the reader's next action?
+
+Carry those patterns into the active client's voice references when authorized. Generalize the reasoning pattern, not the newest catchphrase. Do not make every future post imitate the same surface language.
+
 For each failure, revise the actual passage and repeat the affected review. If an evidence gap persists, remove or narrow the claim instead of raising its rhetorical force. When taste remains uncertain after two revisions, surface the specific choice with a draft rather than claiming the voice is perfected.
 
 Keep a compact review record when saving a content packet: source coverage, ownership boundaries, voice anchors, chosen structural reasoning, concrete revisions, and unresolved limits. Self-review is editorial evidence, not user approval or performance validation.

@@ -16,6 +16,8 @@
     "validate:candidate": "python3 scripts/validate_candidate.py",
     "skills:check": "node scripts/sync-skills.mjs --check",
     "skills:install": "node scripts/sync-skills.mjs --install",
+    "eval:social-post-copy": "node scripts/run-skill-eval.mjs --config evals/social-post-copy/eval.config.json",
+    "eval:social-post-copy:dry": "node scripts/run-skill-eval.mjs --config evals/social-post-copy/eval.config.json --dry-run",
     "check": "npm test && npm run test:python && npm run validate:repo"
   },
   "dependencies": {

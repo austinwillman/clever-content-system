@@ -1,0 +1,31 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["post", "limitations", "metadata", "authorization"],
+  "properties": {
+    "post": { "type": "string" },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["keyword_status"],
+      "properties": {
+        "keyword_status": {
+          "type": "string",
+          "enum": ["resolved", "unresolved", "not_requested"]
+        }
+      }
+    },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "string", "enum": ["draft_only"] }
+      }
+    }
+  }
+}

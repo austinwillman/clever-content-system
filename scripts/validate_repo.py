@@ -28,6 +28,8 @@ REQUIRED_REPOSITORY_FILES = (
     "scripts/jsonschema_min.py",
     "scripts/new_client.py",
     "docs/client-onboarding.md",
+    "docs/skill-evals.md",
+    "docs/eval-baselines/social-post-copy-2026-09-18.md",
     "tests/test_validate_repo.py",
     "tests/test_validate_candidate.py",
     "tests/test_new_client.py",
@@ -42,6 +44,8 @@ REQUIRED_REPOSITORY_FILES = (
 )
 
 REQUIRED_SKILL_FILES = (
+    "skills/intent-drift-audit/SKILL.md",
+    "skills/intent-drift-audit/agents/openai.yaml",
     "skills/social-post-copy/SKILL.md",
     "skills/social-post-copy/references/editorial-review.md",
     "skills/social-post-copy/agents/openai.yaml",

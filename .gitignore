@@ -10,3 +10,4 @@ scripts/__pycache__/
 tests/__pycache__/
 __pycache__/
 node_modules/
+eval-results/
