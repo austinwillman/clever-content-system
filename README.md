@@ -36,7 +36,7 @@ npm run eval:social-post-copy       # compare social copy with and without the s
 - `scripts/validate_candidate.py` checks the portable candidate contract outside the Node runtime.
 - `skills/transcript-to-content` turns supplied transcript material into ranked, source-grounded candidates and post-approval recording briefs.
 - `skills/trend-to-fit` decides whether a supplied trend signal fits the client before it becomes a candidate.
-- `skills/kallaway-hooks` writes or critiques source-faithful video openings using adapted Kallaway mechanics and owner-recognition gates.
+- `skills/kallaway-hooks` writes or critiques source-faithful video openings using adapted Kallaway mechanics, owner-recognition gates, front-loaded proof and stakes, and hook-to-body truth checks.
 - `skills/social-post-copy` writes complete social posts in the active client's evidenced voice, with source, ownership, and editorial review gates.
 - `skills/intent-drift-audit` performs a read-only comparison between completed work and the user's latest intent, verification standard, and authorization boundary.
 - `skills/brand-thumbnail` produces a thumbnail from a client-owned brand profile, protecting exact copy and official logos through deterministic compositing.

@@ -11,6 +11,46 @@ A useful hook creates both:
 
 The viewer should understand the subject and form one specific question that the next section begins answering.
 
+## Front-loaded proof and stakes
+
+Strong short-form openings commonly name a concrete anchor in line one:
+
+- A verified number or bounded stake
+- A named tool, platform, or recognizable event
+- A visible consequence or desired outcome
+- A relevant credential or owned experience
+- Attributable outside authority
+
+This is a prioritization rule, not a license to add bigger claims. Use the strongest truthful anchor already present in the source. If the body contains no useful number, credential, or authority, lead with the owner's recognizable situation instead.
+
+The first line should answer two questions:
+
+1. What is this about?
+2. Why should this specific viewer care now?
+
+Do not bury the reason to watch until the middle of the video. Also do not spend the entire payoff in the hook. Name the premise and stakes, then leave one body-supported question open.
+
+## Authority hierarchy
+
+Use authority in this order:
+
+1. **Owned proof:** The speaker's verified experiment, result, mistake, observation, or direct client work.
+2. **Relevant credential:** Experience that explains why the speaker can interpret the lesson.
+3. **Borrowed authority:** A sourced expert, company, book, or finding that genuinely appears in the body.
+
+Owned proof is normally strongest because it gives the founder something original to teach. A credential should shorten the trust gap, not become self-congratulation. Borrowed authority should orient or contrast. It must not imply endorsement, inflate a weak lesson, or replace the speaker's point of view.
+
+## Withhold the answer, not the premise
+
+Weak hooks often hide the exact detail that makes the story understandable. When the body is genuinely about a named tool, a verified number, or a concrete incident, state it early. Preserve curiosity by withholding the cause, mechanism, choice, or lesson.
+
+Examples:
+
+- Better: name the verified number, then leave open how or why it happened.
+- Better: name the tool when the tool is central, then leave open the prompt, workflow, or result.
+- Worse: say "something crazy happened" when the concrete incident is already available.
+- Worse: reveal a projected outcome as though it already happened.
+
 ## Three-beat contrast structure
 
 Use when the body contains a genuine reframe:
@@ -70,6 +110,33 @@ Before recommending a hook, answer:
 - Does the body resolve it without changing subjects?
 
 If reasonable viewers could form incompatible expectations, rewrite the hook.
+
+## Line-one audit
+
+Score each candidate before recommending it:
+
+- **Subject:** Is the topic obvious on first listen?
+- **Viewer:** Does the intended owner recognize why it matters?
+- **Anchor:** Does line one contain the strongest available number, stake, credential, tool, or concrete event?
+- **Tension:** Is there a meaningful contrast, consequence, or unanswered question?
+- **Truth:** Is every claim explicitly supported by the source?
+- **Continuity:** Does the next spoken line continue the same question?
+- **Voice:** Could the founder say it naturally without sounding like a borrowed creator persona?
+- **Visual:** Can the first frame reinforce the same claim with an available asset or action?
+
+Truth and continuity are hard gates. Reject a candidate that fails either one. The other dimensions guide comparison among truthful options.
+
+## Claim-pressure failures
+
+Numbers and authority make hooks stronger, so they also create the highest temptation to overstate. Reject these substitutions:
+
+- A possible loss rewritten as money actually lost
+- A security exposure rewritten as a prevented catastrophe
+- A target or projection rewritten as an achieved result
+- Limited tool access rewritten as unrestricted access
+- A creator's opinion rewritten as an endorsement
+- A view count rewritten as proof of leads, sales, or revenue
+- A credential that is unrelated to the lesson
 
 ## First-frame visual prompts
 
