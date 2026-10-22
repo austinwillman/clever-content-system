@@ -64,7 +64,7 @@ For service-business founder content:
    - Owner-recognition or desire
    - Contrarian reframe
    - Story or proof
-6. For Willman Ventures founder videos, prefer an honest viewer challenge and a difference reveal when the body supports them. Treat this as a creative preference until account-level retention data validates it.
+6. When the active workspace records a preferred opening style, such as an honest viewer challenge or a difference reveal, prefer it when the body supports it. Treat that preference as a creative hypothesis until account-level retention data validates it.
 7. Use different Kallaway archetypes when the source supports them. Do not force an archetype that requires missing proof or an unavailable visual.
 8. Run the line-one audit from the framework reference. Reject any option that fails truth or hook-to-body continuity, regardless of how compelling it sounds.
 9. Recommend one option based on audience fit, body continuity, filming practicality, and the strength of its truthful front-loaded anchor.
