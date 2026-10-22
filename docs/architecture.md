@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Client Content System separates a reusable public engine from private client workspaces. The engine makes the operating model repeatable. The workspace holds the client-owned context and records required to use that model safely.
+Clever Content System separates a reusable public engine from private client workspaces. The engine makes the operating model repeatable. The workspace holds the client-owned context and records required to use that model safely.
 
 ## Public engine
 

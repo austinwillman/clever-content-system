@@ -9,9 +9,13 @@ This repository is the reusable public engine for a client content system. It is
 3. Run the baseline checks before changing behavior:
 
 ```sh
-python3 -m unittest discover -s tests -v
+npm install
+npm test
+python3 -m unittest discover -s tests
 python3 scripts/validate_repo.py
 ```
+
+`npm run check` runs all three.
 
 4. Inspect the current pull request and recent commits instead of relying on chat history.
 
@@ -26,7 +30,8 @@ The reusable engine must not depend on a particular person, company, industry, g
 ## Architecture rules
 
 - `templates/client-workspace/` defines the empty private-workspace starting point.
-- `schemas/` defines portable contracts.
+- `lib/` is the engine runtime and owns manifest, topic, batch, and fatigue validation.
+- `schemas/` documents those contracts portably. `scripts/validate_repo.py` owns only the repository privacy boundary, not manifest semantics.
 - `skills/` contains installable, white-labeled capabilities.
 - `scripts/validate_repo.py` validates the exact Git index state that would be committed.
 - Research and source truth stay private. Public skills receive only the active workspace context supplied at runtime.
@@ -66,12 +71,25 @@ The completed foundation includes:
 
 - the public/private architecture and security boundary
 - the client workspace manifest schema and empty templates
-- the installable `brand-thumbnail` skill
+- the content candidate contract, its stdlib validator, and batch-level client isolation
+- the installable `brand-thumbnail`, `transcript-to-content`, and `trend-to-fit` skills
+- private client workspace scaffolding via `scripts/new_client.py`
+- the client onboarding runbook in `docs/client-onboarding.md`
 - staged-content privacy and contract validation
 - regression tests and GitHub Actions CI
 - GitHub private vulnerability reporting
 
-The remaining pipeline is intentionally not presented as implemented. Continue it in the order defined in `docs/roadmap.md`.
+Build steps 1 through 3 of `docs/roadmap.md` are implemented. Steps 4 through 6, approval orchestration, fatigue-aware routing, and the top-level pipeline command, are not. Do not present them as implemented.
+
+## Multi-client invariants
+
+These hold across every change. Breaking one is a client-confidentiality incident, not a bug.
+
+- A skill never resolves a client workspace on its own. There is no default client. `tests/test_skill_contracts.py` enforces this.
+- A candidate carries `client_id`, and a batch may not mix clients.
+- Approval requires an approver, a timestamp, a workspace-relative approval record, and at least one supporting evidence entry whose `validation_status` is not `unavailable`.
+- Client workspaces live in their own private repositories, never in this one.
+- The engine contains no client-specific values. A client-specific list belongs in that client's manifest, never in `lib/` or `scripts/`.
 
 ## Definition of done
 

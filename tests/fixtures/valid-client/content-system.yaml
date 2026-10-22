@@ -1,0 +1,60 @@
+schema_version: 1
+client_id: fixture-client
+client_name: Fixture Client
+initiative:
+  id: qualified-audience-trust
+  horizon_days: 90
+  objective: Grow a qualified audience through useful insight and trust.
+positioning: I help founders get found, get chosen, and get free.
+approval_gate:
+  required_before: production
+  approved_by: "<role or person responsible for approval>"
+  record_location: approvals/approval-record.md
+last_research_refresh_date: 2026-08-19
+last_content_history_refresh_date: 2026-08-19
+pillars:
+  - id: get-found
+    label: Get Found
+  - id: get-chosen
+    label: Get Chosen
+  - id: get-free
+    label: Get Free
+  - id: stay-human
+    label: Stay Human
+content_output:
+  allowed_formats: [video]
+  batch_size: 4
+cta_classes: [reach, relationship, capture, conversation, conversion]
+cta_destinations:
+  follow: { class: reach, available: true }
+  newsletter: { class: relationship, available: false }
+  lead_magnet: { class: capture, available: false }
+  direct_message: { class: conversation, available: true }
+  consultation: { class: conversion, available: true }
+fatigue:
+  topic_cooldown_days: 45
+  max_hook_uses_per_seven_posts: 2
+  hook_frequency_window_posts: 7
+assets:
+  context: content-context.md
+  client_foundation: strategy/client-foundation.json
+  topic_bank: strategy/topic-bank.json
+  demand_map: research/demand-map.csv
+  trend_library: research/trend-library.json
+  hook_library: research/hook-library.json
+  research_log: research/research-log.json
+  transcript_index: sources/transcript-index.json
+  content_history: history/content-history.csv
+research_sources:
+  google_drive:
+    status: not_connected
+    modes: [foundation]
+    required: false
+    subscription: Plan-dependent connector access
+    fallback: Export approved workspace files into the client folder.
+  google_search_console:
+    status: not_connected
+    modes: [foundation, batch_signal]
+    required: false
+    subscription: Free Google account with verified property access
+    fallback: Export the Performance report as CSV.

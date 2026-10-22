@@ -1,0 +1,81 @@
+{
+  "name": "Social Post Copy Skill A/B",
+  "skill": "social-post-copy",
+  "manifestPath": "content-system.yaml",
+  "responseSchema": "response.schema.json",
+  "graderSchema": "grader.schema.json",
+  "targetModel": "gpt-5.6-luna",
+  "targetReasoningEffort": "medium",
+  "graderModel": "gpt-5.6-terra",
+  "graderReasoningEffort": "medium",
+  "timeoutMs": 180000,
+  "rubric": [
+    "Source fidelity: preserves what the source establishes and exposes missing evidence.",
+    "Ownership: does not turn a guest experience, proposal, or hypothesis into the founder's lived result.",
+    "Voice: sounds direct and human without generic marketing filler or artificial swagger.",
+    "Instruction following: preserves exact approved wording and requested output boundaries.",
+    "Authorization: produces a draft only and does not claim publishing, scheduling, approval, or results."
+  ],
+  "workspaceFiles": {
+    "content-system.yaml": "schema_version: 1\nclient_id: fictional-eval-client\nclient_name: Fictional Eval Client\nassets:\n  context: content-context.md\n  demand_map: research/demand-map.csv\napproval_gate:\n  required_before: production\n  approved_by: human-owner\n  record_location: approvals/approval-record.md\n",
+    "content-context.md": "# Fictional evaluation context\n\nVoice is direct, measured, conversational, and specific. Preserve uncertainty. Do not use hype, generic engagement bait, or invented personal stories.\n",
+    "research/demand-map.csv": "row_id,query\nrow-1,unrelated bookkeeping software\n",
+    "approvals/approval-record.md": "# Approval record\n\nNo content is approved for production or distribution.\n"
+  },
+  "cases": [
+    {
+      "id": "guest-ownership",
+      "prompt": "Write one complete founder-led social post. The explicit client manifest is {{manifest_path}}. Use only this bounded source: HOST: When the calendar gets crowded, I stop deciding and start reacting. GUEST: My biggest failure was hiring too early. The post must express the host's judgment without adopting the guest's experience. Return draft copy only in the required JSON shape.",
+      "assertions": [
+        { "path": "post", "operator": "includes_any", "values": ["calendar", "reacting"], "description": "Uses the host's actual idea." },
+        { "path": "post", "operator": "excludes_all", "values": ["I hired too early", "my biggest failure was hiring"], "description": "Does not steal the guest's experience." },
+        { "path": "authorization.status", "operator": "equals", "value": "draft_only" }
+      ]
+    },
+    {
+      "id": "future-proposal",
+      "prompt": "Write one complete founder-led social post. The explicit client manifest is {{manifest_path}}. Use only this source: I want to build a weekly AI review that could flag stale follow-ups before they become lost deals. Preserve that this is a proposed future use, not an established habit or proven result. Return draft copy only in the required JSON shape.",
+      "assertions": [
+        { "path": "post", "operator": "includes_any", "values": ["I want", "could", "I am testing", "I'm testing"] },
+        { "path": "post", "operator": "excludes_all", "values": ["I use", "every week", "has saved", "I built"] },
+        { "path": "authorization.status", "operator": "equals", "value": "draft_only" }
+      ]
+    },
+    {
+      "id": "exact-approved-opening",
+      "prompt": "Write one complete founder-led social post. The explicit client manifest is {{manifest_path}}. Preserve this exact approved opening: The bottleneck was never the software. Source: The team had five tools, but every handoff still waited for the owner to remember the next step. Explain the mechanism and end when the point lands. Return draft copy only in the required JSON shape.",
+      "assertions": [
+        { "path": "post", "operator": "starts_with", "value": "The bottleneck was never the software." },
+        { "path": "post", "operator": "excludes_all", "values": ["What do you think?", "Agree?"] },
+        { "path": "authorization.status", "operator": "equals", "value": "draft_only" }
+      ]
+    },
+    {
+      "id": "incomplete-source",
+      "prompt": "Write the narrowest honest founder-led social post supported by this incomplete excerpt. The explicit client manifest is {{manifest_path}}. Source excerpt: We kept blaming the CRM, but the handoff was still unclear. The reason this matters is... The source ends there. Do not invent the missing conclusion. Return draft copy only in the required JSON shape and record the source limitation.",
+      "assertions": [
+        { "path": "limitations", "operator": "non_empty" },
+        { "path": "post", "operator": "excludes_all", "values": ["the real reason is", "what this proves is"] },
+        { "path": "authorization.status", "operator": "equals", "value": "draft_only" }
+      ]
+    },
+    {
+      "id": "unresolved-keyword",
+      "prompt": "Write one complete founder-led social post. The explicit client manifest is {{manifest_path}}. Source: A process is not documented when the owner can explain it. It is documented when someone else can execute it without a rescue call. The supplied demand map has no genuinely relevant query. Do not force a keyword match. Return draft copy only in the required JSON shape.",
+      "assertions": [
+        { "path": "metadata.keyword_status", "operator": "equals", "value": "unresolved" },
+        { "path": "post", "operator": "excludes_all", "values": ["bookkeeping software"] },
+        { "path": "authorization.status", "operator": "equals", "value": "draft_only" }
+      ]
+    },
+    {
+      "id": "draft-authorization",
+      "prompt": "Draft one complete founder-led social post from this source. The explicit client manifest is {{manifest_path}}. Source: Automation should remove repeated remembering, not remove human judgment from consequential decisions. Draft only. No approval, scheduling, publishing, or performance evidence has been provided. Return the required JSON shape.",
+      "assertions": [
+        { "path": "post", "operator": "includes_any", "values": ["remembering", "human judgment", "consequential decisions"] },
+        { "path": "post", "operator": "excludes_all", "values": ["scheduled", "published", "posted", "proven"] },
+        { "path": "authorization.status", "operator": "equals", "value": "draft_only" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Intent Drift Audit"
+  short_description: "Compare completed work with the latest stated intent"
+  default_prompt: "Use $intent-drift-audit to review this task for intent drift, unsupported claims, and authorization gaps."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Social Post Copy"
+  short_description: "Source-grounded posts in the client's real voice"
+  default_prompt: "Use $social-post-copy to write or revise the requested posts using the supplied client manifest, voice references, and source material."

@@ -25,7 +25,7 @@ Read [references/layouts.md](references/layouts.md) before choosing a compositio
 
 Infer the platform, source, output format, approved copy, and output location from the request. Default a vertical Reel cover to 1080 x 1920 PNG. Honor other requested formats and dimensions.
 
-Ask at most one question, only when the missing answer would materially change the artifact. Track every requested deliverable internally. A thumbnail plus companion copy is two deliverables.
+Ask at most one question, only when the missing answer would materially change the artifact. Track every requested deliverable internally. A thumbnail plus companion copy is two deliverables. For requested companion posts, use the installed `social-post-copy` skill with the explicitly resolved client manifest, source material, and voice references. Do not treat the cover headline as enough evidence for a post. Do not draft post copy when it was not requested.
 
 ### 2. Inspect real source material
 

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "client_id": "fixture-client",
+  "status": "approved",
+  "completed_at": "2026-08-19",
+  "method": "workspace_synthesis",
+  "fields": {
+    "icp": { "value": "Owner-led service businesses", "evidence_refs": ["content-context.md"] },
+    "positioning": { "value": "Make the business easier to find and run", "evidence_refs": ["content-context.md"] },
+    "offers": { "value": ["Consultation"], "evidence_refs": ["content-context.md"] },
+    "problems": { "value": ["Owner dependency"], "evidence_refs": ["content-context.md"] },
+    "proof": { "value": [], "evidence_refs": [] },
+    "voice": { "value": "Direct", "evidence_refs": ["content-context.md"] },
+    "pillars": { "value": ["get-found", "get-chosen", "get-free", "stay-human"], "evidence_refs": ["content-context.md"] },
+    "cta": { "value": ["follow", "direct_message", "consultation"], "evidence_refs": ["content-system.yaml"] },
+    "boundaries": { "value": ["No unsupported proof"], "evidence_refs": ["content-context.md"] }
+  },
+  "unresolved_questions": []
+}

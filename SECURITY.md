@@ -19,7 +19,7 @@ The `.gitignore` file excludes `clients/`, `private/`, `secrets/`, `.env`, and `
 
 ## Reporting a vulnerability
 
-Do not open a public issue for a suspected exposure or vulnerability. Use [GitHub private security advisories](https://github.com/austinwillman/client-content-system/security/advisories/new) to report it privately to the repository owner with:
+Do not open a public issue for a suspected exposure or vulnerability. Use [GitHub private security advisories](https://github.com/austinwillman/clever-content-system/security/advisories/new) to report it privately to the repository owner with:
 
 - a concise description of the issue
 - the affected file, path, or component

@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["output_a", "output_b", "winner", "reason"],
+  "properties": {
+    "output_a": { "$ref": "#/$defs/score" },
+    "output_b": { "$ref": "#/$defs/score" },
+    "winner": { "type": "string", "enum": ["a", "b", "tie"] },
+    "reason": { "type": "string" }
+  },
+  "$defs": {
+    "score": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_fidelity", "ownership", "voice", "instruction_following", "authorization", "notes"],
+      "properties": {
+        "source_fidelity": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "ownership": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "voice": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "instruction_following": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "authorization": { "type": "integer", "minimum": 0, "maximum": 2 },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}
